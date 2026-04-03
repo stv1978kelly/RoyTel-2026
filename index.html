@@ -125,10 +125,34 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
 .player-item .pi-name{font-size:14px;font-weight:700;color:var(--blue)}
 .player-item .pi-hcp{font-size:12px;color:var(--muted);font-weight:700}
 .del-btn{background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;padding:0 4px;font-weight:700;line-height:1}
-.scoring-row{display:flex;gap:0;margin-bottom:12px;border:2px solid var(--blue)}
-.scoring-opt{flex:1;padding:12px 8px;border:none;font-size:13px;font-weight:700;cursor:pointer;color:var(--blue);background:#fff;text-align:center;-webkit-tap-highlight-color:transparent;border-right:1px solid var(--blue)}
-.scoring-opt:last-child{border-right:none}
-.scoring-opt.on{background:var(--blue);color:#fff}
+/* Format cards */
+.format-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.format-card{border:2px solid var(--border);background:#fff;cursor:pointer;overflow:hidden;-webkit-tap-highlight-color:transparent}
+.format-card.on{border-color:var(--blue);border-left:5px solid var(--blue)}
+.format-card.on .fc-header{background:var(--blue)}
+.fc-header{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#f8f9ff}
+.fc-name{font-size:15px;font-weight:900;color:var(--blue)}
+.format-card.on .fc-name{color:#fff}
+.fc-tag{font-size:10px;font-weight:700;padding:2px 8px;background:rgba(255,255,255,.3);color:#fff;text-transform:uppercase;letter-spacing:.5px;display:none}
+.format-card.on .fc-tag{display:inline}
+.fc-rules{padding:12px 14px;font-size:12px;color:#374151;line-height:1.6;border-top:1px solid var(--border);display:none}
+.format-card.on .fc-rules{display:block}
+.fc-rules strong{color:var(--blue)}
+.fc-rules ul{padding-left:16px;margin-top:4px}
+.fc-rules li{margin-bottom:3px}
+.scramble-opts{padding:10px 14px;background:#fffbeb;border-top:1px solid #fde68a;display:none;align-items:center;gap:10px}
+.format-card.on .scramble-opts{display:flex}
+/* Drive selector in modal */
+.drive-section{margin-bottom:12px;padding:10px;background:var(--light);border-left:3px solid var(--amber)}
+.drive-section .ds-label{font-size:11px;color:var(--blue);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.drive-btns{display:flex;flex-wrap:wrap;gap:6px}
+.drive-btn{padding:7px 14px;border:2px solid var(--blue);background:#fff;font-size:13px;font-weight:700;color:var(--blue);cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:0}
+.drive-btn.on{background:var(--amber);border-color:var(--amber);color:#fff}
+/* Scramble drive tally */
+.drive-tally{font-size:10px;display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}
+.drive-tally .dt{padding:1px 5px;border:1px solid var(--border);color:var(--muted)}
+.drive-tally .dt.ok{border-color:var(--green);color:var(--green);background:#f0fdf4}
+.drive-tally .dt.warn{border-color:var(--red);color:var(--red);background:#fff0f0}
 /* Admin bar */
 .admin-bar{background:var(--red);color:#fff;font-size:11px;font-weight:700;text-align:center;padding:5px;letter-spacing:1px;text-transform:uppercase;margin:0 -16px 14px}
 /* Join screen */
@@ -306,10 +330,71 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
     <button class="btn-sm"    id="h18" onclick="setHoles(18)">18 Holes</button>
   </div>
 
-  <label>Scoring Format</label>
-  <div class="scoring-row">
-    <button class="scoring-opt on" id="sc-stroke"     onclick="setScoring('stroke')">Stroke Play</button>
-    <button class="scoring-opt"    id="sc-stableford" onclick="setScoring('stableford')">Stableford</button>
+  <label>Competition Format</label>
+  <div class="format-cards">
+
+    <div class="format-card on" id="fc-stroke" onclick="setScoring('stroke')">
+      <div class="fc-header">
+        <span class="fc-name">⛳ Stroke Play</span>
+        <span class="fc-tag">Selected</span>
+      </div>
+      <div class="fc-rules">
+        Every shot counts. Lowest total score wins.<br>
+        <strong>Rules:</strong>
+        <ul>
+          <li>Each player counts every stroke from tee to hole</li>
+          <li>Handicap strokes deducted from gross total at the end</li>
+          <li>Lowest net score wins</li>
+          <li>Ties broken by back 9, then back 6, then back 3</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="format-card" id="fc-stableford" onclick="setScoring('stableford')">
+      <div class="fc-header">
+        <span class="fc-name">🏆 Stableford</span>
+        <span class="fc-tag">Selected</span>
+      </div>
+      <div class="fc-rules">
+        Points per hole based on score vs par. Most points wins.<br>
+        <strong>Points:</strong>
+        <ul>
+          <li>Albatross (3 under) = 5 pts</li>
+          <li>Eagle (2 under) = 4 pts</li>
+          <li>Birdie (1 under) = 3 pts</li>
+          <li>Par = 2 pts</li>
+          <li>Bogey (1 over) = 1 pt</li>
+          <li>Double bogey or worse = 0 pts</li>
+        </ul>
+        Handicap strokes applied per Stroke Index before calculating points.
+      </div>
+    </div>
+
+    <div class="format-card" id="fc-scramble" onclick="setScoring('scramble')">
+      <div class="fc-header">
+        <span class="fc-name">🤝 Texas Scramble</span>
+        <span class="fc-tag">Selected</span>
+      </div>
+      <div class="fc-rules">
+        Team format played in groups of 2–4. One team score per hole.<br>
+        <strong>Rules:</strong>
+        <ul>
+          <li>All players tee off on each hole</li>
+          <li>The best drive is selected by the team</li>
+          <li>All players play their next shot from that spot</li>
+          <li>This continues until the ball is holed</li>
+          <li>Each team member must contribute a minimum number of drives</li>
+          <li>Minimum drives = holes ÷ players (rounded down)</li>
+          <li>Team handicap = 25% of combined player handicaps</li>
+        </ul>
+      </div>
+      <div class="scramble-opts">
+        <label style="margin:0;font-size:12px;white-space:nowrap">Min drives per player:</label>
+        <input type="number" id="s-min-drives" value="2" min="1" max="9"
+          style="width:60px;padding:5px 8px;font-size:14px;font-weight:700;text-align:center;margin:0;border:2px solid var(--amber)"/>
+      </div>
+    </div>
+
   </div>
 
   <label>Players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(Name + Handicap)</span></label>
@@ -404,6 +489,10 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
     <h3 id="m-title">Hole 1</h3>
     <div class="modal-meta" id="m-meta">Par 4 · Player</div>
     <div id="m-stab" class="modal-stab" style="display:none"></div>
+    <div id="m-drive" class="drive-section" style="display:none">
+      <div class="ds-label">📍 Whose drive was used?</div>
+      <div class="drive-btns" id="m-drive-btns"></div>
+    </div>
     <div class="score-label" id="m-label"></div>
     <div class="srow">
       <button class="pm" onclick="adj(-1)">−</button>
@@ -739,7 +828,7 @@ function renderAdmin(){
         <div class="rr-title">${r.course}</div>
         <span style="font-family:monospace;font-weight:900;font-size:14px;color:var(--blue);letter-spacing:3px">${r.id}</span>
       </div>
-      <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.scoring==='stableford'?'Stableford':'Stroke Play'} · ${r.players.length} player${r.players.length!==1?'s':''}</div>
+      <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.scoring==='stableford'?'Stableford':r.scoring==='scramble'?'Texas Scramble':'Stroke Play'} · ${r.players.length} player${r.players.length!==1?'s':''}</div>
       <div class="rr-actions">
         <button class="btn-sm" onclick="openRound('${r.id}')">View</button>
         <button class="btn-sm" onclick="initSetup('${r.id}');showPage('page-setup')" style="border-color:var(--amber);color:var(--amber)">✏️ Edit</button>
@@ -789,8 +878,12 @@ function initSetup(editId){
 
   document.getElementById('h9').classList.toggle('on',S.holes===9);
   document.getElementById('h18').classList.toggle('on',S.holes===18);
-  document.getElementById('sc-stroke').classList.toggle('on',S.scoring==='stroke');
-  document.getElementById('sc-stableford').classList.toggle('on',S.scoring==='stableford');
+  ['stroke','stableford','scramble'].forEach(f=>{
+    const el=document.getElementById('fc-'+f);
+    if(el) el.classList.toggle('on',f===S.scoring);
+  });
+  const md=document.getElementById('s-min-drives');
+  if(md) md.value=isEdit?(getRound(editId)?.minDrives??2):2;
   document.getElementById('s-player').value='';
   document.getElementById('s-hcp').value='';
   document.getElementById('s-err').style.display='none';
@@ -805,8 +898,10 @@ function setHoles(n){
 }
 function setScoring(t){
   S.scoring=t;
-  document.getElementById('sc-stroke').classList.toggle('on',t==='stroke');
-  document.getElementById('sc-stableford').classList.toggle('on',t==='stableford');
+  ['stroke','stableford','scramble'].forEach(f=>{
+    const el=document.getElementById('fc-'+f);
+    if(el) el.classList.toggle('on',f===t);
+  });
 }
 function addPlayer(){
   const nameInp=document.getElementById('s-player');
@@ -949,40 +1044,48 @@ function saveSetup(status){
   err.style.display='none';
   if(!date){err.textContent='Please select a date.';err.style.display='block';return;}
   if(!S.players.length){err.textContent='Add at least one player.';err.style.display='block';return;}
+  if(S.scoring==='scramble'&&!S.groups.length){err.textContent='Texas Scramble requires at least one group. Add players to groups below.';err.style.display='block';return;}
 
   const pars=COURSE.pars.slice(0,S.holes);
   const si=COURSE.si.slice(0,S.holes);
   const handicaps={};
   S.players.forEach(p=>handicaps[p.name]=p.hcp);
+  const minDrives=parseInt(document.getElementById('s-min-drives')?.value)||2;
+  const groups=S.groups.map(g=>({...g,players:[...g.players]}));
+
+  const initScramble=(grps,holes)=>{
+    const ss={},sd={};
+    grps.forEach((_,gi)=>{ss[gi]=new Array(holes).fill(0);sd[gi]=new Array(holes).fill(null);});
+    return{ss,sd};
+  };
 
   if(S.editId){
-    // Update existing round
     load();
-    const r=getRound(S.editId);
-    if(!r)return;
+    const r=getRound(S.editId);if(!r)return;
     r.date=date;r.holes=S.holes;r.pars=pars;r.si=si;r.scoring=S.scoring;
-    r.handicaps=handicaps;r.groups=S.groups.map(g=>({...g,players:[...g.players]}));
-    // Preserve existing scores, add blanks for new players
+    r.handicaps=handicaps;r.groups=groups;r.minDrives=minDrives;
+    if(S.scoring==='scramble'&&(!r.scrambleScores||Object.keys(r.scrambleScores).length!==groups.length)){
+      const{ss,sd}=initScramble(groups,S.holes);
+      r.scrambleScores=ss;r.scrambleDrives=sd;
+    }
     const newScores={};
     S.players.forEach(p=>{
       newScores[p.name]=r.scores[p.name]||new Array(S.holes).fill(0);
-      // Trim or extend score array if holes changed
-      if(newScores[p.name].length<S.holes)
-        while(newScores[p.name].length<S.holes)newScores[p.name].push(0);
+      if(newScores[p.name].length<S.holes) while(newScores[p.name].length<S.holes)newScores[p.name].push(0);
       else newScores[p.name]=newScores[p.name].slice(0,S.holes);
     });
     r.scores=newScores;r.players=S.players.map(p=>p.name);
     save();openRound(r.id);
   }else{
-    // Create new round
     const scores={};
     S.players.forEach(p=>scores[p.name]=new Array(S.holes).fill(0));
+    const{ss,sd}=initScramble(groups,S.holes);
     const round={
       id:genId(),course:COURSE.name,date,holes:S.holes,
-      pars,si,scoring:S.scoring,
+      pars,si,scoring:S.scoring,minDrives,
       players:S.players.map(p=>p.name),
-      handicaps,scores,
-      groups:S.groups.map(g=>({...g,players:[...g.players]})),
+      handicaps,scores,groups,
+      scrambleScores:ss,scrambleDrives:sd,
       status,created:Date.now()
     };
     S.rounds.push(round);save();
@@ -999,8 +1102,9 @@ function openRound(id){
   load();S.currentId=id;
   const r=getRound(id);if(!r){goHome();return;}
   document.getElementById('r-title').textContent=r.course;
+  const fmtLabel=r.scoring==='stableford'?'Stableford':r.scoring==='scramble'?'Texas Scramble':'Stroke Play';
   document.getElementById('r-sub').textContent=
-    `${r.scoring==='stableford'?'Stableford':'Stroke Play'} · ${r.holes} holes · ${r.players.length} player${r.players.length!==1?'s':''}`;
+    `${fmtLabel} · ${r.holes} holes · ${r.players.length} player${r.players.length!==1?'s':''}`;
   document.getElementById('r-code').textContent=r.id;
   document.getElementById('r-date').textContent=fmtDate(r.date);
   document.getElementById('r-badge').innerHTML=
@@ -1096,11 +1200,57 @@ function buildScorecardRows(r,isStab){
   return html;
 }
 
+function buildScrambleRows(r){
+  const groups=r.groups||[];
+  const ss=r.scrambleScores||{};
+  const sd=r.scrambleDrives||{};
+  const minD=r.minDrives||2;
+  const cols=r.holes+2;
+  let html='';
+  groups.forEach((g,gi)=>{
+    const scores=ss[gi]||new Array(r.holes).fill(0);
+    const drives=sd[gi]||new Array(r.holes).fill(null);
+    const teeStr=g.teeTime?` · 🕐 ${g.teeTime}`:'';
+    html+=`<tr class="sc-group-row"><td colspan="${cols+1}">🤝 Group ${gi+1}${teeStr}</td></tr>`;
+    // Team score row
+    const canEdit=(S.isAdmin||groupContainsCurrentPlayer(r,gi))&&r.status==='live';
+    let tot=0,played=0,vp=0;
+    const cells=r.pars.map((par,i)=>{
+      const sc=scores[i];const cls=sc>0?scoreClass(sc,par):'empty-c';
+      if(sc>0){tot+=sc;played++;vp+=sc-par;}
+      const click=canEdit?`onclick="openScrambleModal(${gi},${i})"`:'';
+      return`<td class="score-cell ${canEdit?'editable':''} ${cls}" ${click}>${sc>0?sc:'·'}</td>`;
+    }).join('');
+    const diffStr=played===0?'—':(vp>0?'+'+vp:vp===0?'E':''+vp);
+    const diffCls=played===0?'':(vp<0?'green':vp>0?'red':'muted');
+    // Drive tally per player
+    const driveCounts={};
+    g.players.forEach(p=>driveCounts[p]=0);
+    drives.forEach(d=>{if(d&&driveCounts[d]!==undefined)driveCounts[d]++;});
+    const tallyHtml=g.players.map(p=>{
+      const cnt=driveCounts[p]||0;const ok=cnt>=minD;
+      return`<span class="dt ${ok?'ok':'warn'}">${p.split(' ')[0]}: ${cnt}</span>`;
+    }).join('');
+    html+=`<tr class="sc-team-row">
+      <td>Team Score<br><div class="drive-tally">${tallyHtml}</div></td>
+      ${cells}
+      <td><b>${tot||'—'}</b></td>
+      <td class="${diffCls}"><b>${diffStr}</b></td>
+    </tr>`;
+  });
+  return html;
+}
+function groupContainsCurrentPlayer(r,gi){
+  const g=(r.groups||[])[gi];
+  return g&&S.currentPlayer&&g.players.includes(S.currentPlayer);
+}
+
 // ── Scorecard ─────────────────────────────────────────────
 function renderScorecard(){
   const r=curRound();if(!r)return;
   const wrap=document.getElementById('sc-wrap');
   const isStab=r.scoring==='stableford';
+  const isScramble=r.scoring==='scramble';
 
   if(r.status==='scheduled'&&!S.isAdmin){
     wrap.innerHTML=`<div class="empty-state" style="padding:40px 20px">
@@ -1116,10 +1266,18 @@ function renderScorecard(){
   const thead=document.querySelector('#sc-table thead');
   const tbody=document.querySelector('#sc-table tbody');
   const totPar=r.pars.reduce((a,b)=>a+b,0);
+
+  if(isScramble){
+    thead.innerHTML=
+      `<tr><th>Team</th>${r.pars.map((_,i)=>`<th>H${i+1}</th>`).join('')}<th>Tot</th><th>+/−</th></tr>`+
+      `<tr><td>Par</td>${r.pars.map(p=>`<td>${p}</td>`).join('')}<td>${totPar}</td><td>—</td></tr>`+
+      `<tr><td>SI</td>${r.si.map(s=>`<td>${s}</td>`).join('')}<td>—</td><td>—</td></tr>`;
+    tbody.innerHTML=buildScrambleRows(r);
+    return;
+  }
+
   const extraCols=isStab?'<th>Pts</th>':'';
   const extraParCols=isStab?`<td>—</td>`:'';
-
-  // Row 1: Hole numbers
   thead.innerHTML=
     `<tr><th>Player</th>${r.pars.map((_,i)=>`<th>H${i+1}</th>`).join('')}<th>Tot</th>${extraCols}</tr>`+
     `<tr><td>Par</td>${r.pars.map(p=>`<td>${p}</td>`).join('')}<td>${totPar}</td>${extraParCols}</tr>`+
@@ -1157,10 +1315,79 @@ function openModal(roundId,pIdx,hole){
     const sub=pts!==null?`${pts}pt`:`${vpLabel(d)}`;
     return `<button class="hbtn ${scoreBtnClass(s,par)}" id="qb-${s}" onclick="quickSet(${s})">${s}<br><span style="font-size:9px">${sub}</span></button>`;
   }).join('');
+  // Hide drive selector for non-scramble
+  document.getElementById('m-drive').style.display='none';
   updateModal();
   document.getElementById('score-modal').classList.add('on');
 }
-function updateModal(){
+
+// ── Scramble Modal ────────────────────────────────────────
+function openScrambleModal(gi,hole){
+  const r=curRound();if(!r||r.status==='complete')return;
+  const par=r.pars[hole];
+  const g=r.groups[gi];
+  const ss=r.scrambleScores||{};
+  const sd=r.scrambleDrives||{};
+  S.mCtx={scramble:true,gi,hole,roundId:r.id};
+  S.mScore=(ss[gi]&&ss[gi][hole]>0)?ss[gi][hole]:par;
+  S.mDrive=(sd[gi]&&sd[gi][hole])||null;
+
+  document.getElementById('m-title').textContent=`Hole ${hole+1} — ${COURSE.names[hole]||''}`;
+  document.getElementById('m-meta').textContent=`Par ${par} · 🤝 Group ${gi+1} Team Score`;
+  document.getElementById('m-stab').style.display='none';
+
+  // Drive selector
+  const driveEl=document.getElementById('m-drive');
+  const driveBtns=document.getElementById('m-drive-btns');
+  driveEl.style.display='block';
+  driveBtns.innerHTML=g.players.map(p=>`
+    <button class="drive-btn ${S.mDrive===p?'on':''}" id="db-${p.replace(/\s/g,'_')}"
+      onclick="selectDrive('${p}')">${p.split(' ')[0]}</button>`).join('');
+
+  // Quick score buttons
+  const lo=Math.max(1,par-3),hi=par+4;
+  const qEl=document.getElementById('m-quick');
+  qEl.style.gridTemplateColumns=`repeat(${hi-lo+1},1fr)`;
+  qEl.innerHTML=Array.from({length:hi-lo+1},(_,k)=>{
+    const s=lo+k,d=s-par;
+    return`<button class="hbtn ${scoreBtnClass(s,par)}" id="qb-${s}" onclick="quickSet(${s})">${s}<br><span style="font-size:9px">${vpLabel(d)}</span></button>`;
+  }).join('');
+  updateScrambleModal();
+  document.getElementById('score-modal').classList.add('on');
+}
+function selectDrive(playerName){
+  S.mDrive=playerName;
+  document.querySelectorAll('#m-drive-btns .drive-btn').forEach(b=>{
+    b.classList.toggle('on',b.id===`db-${playerName.replace(/\s/g,'_')}`);
+  });
+}
+function updateScrambleModal(){
+  const r=getRound(S.mCtx.roundId),par=r.pars[S.mCtx.hole];
+  document.getElementById('m-score').textContent=S.mScore;
+  const d=S.mScore-par;
+  const lEl=document.getElementById('m-label');
+  lEl.textContent=vpLabel(d);
+  lEl.style.color=d<0?'var(--green)':d>0?'var(--red)':'var(--muted)';
+  document.querySelectorAll('#m-quick .hbtn').forEach(b=>{
+    b.classList.toggle('on',parseInt(b.id.replace('qb-',''))===S.mScore);
+  });
+}
+function saveScore(){
+  if(S.mCtx?.scramble){
+    const r=getRound(S.mCtx.roundId);
+    if(!r.scrambleScores)r.scrambleScores={};
+    if(!r.scrambleDrives)r.scrambleDrives={};
+    if(!r.scrambleScores[S.mCtx.gi])r.scrambleScores[S.mCtx.gi]=new Array(r.holes).fill(0);
+    if(!r.scrambleDrives[S.mCtx.gi])r.scrambleDrives[S.mCtx.gi]=new Array(r.holes).fill(null);
+    r.scrambleScores[S.mCtx.gi][S.mCtx.hole]=S.mScore;
+    r.scrambleDrives[S.mCtx.gi][S.mCtx.hole]=S.mDrive;
+    save();closeModal();renderScorecard();
+    return;
+  }
+  const r=getRound(S.mCtx.roundId);
+  r.scores[r.players[S.mCtx.pIdx]][S.mCtx.hole]=S.mScore;
+  save();closeModal();renderScorecard();
+}
   const r=getRound(S.mCtx.roundId),par=r.pars[S.mCtx.hole],si=r.si[S.mCtx.hole];
   const player=r.players[S.mCtx.pIdx];
   const hcp=r.handicaps?.[player]??0;
@@ -1178,12 +1405,13 @@ function updateModal(){
     b.classList.toggle('on',parseInt(b.id.replace('qb-',''))===S.mScore);
   });
 }
-function quickSet(s){S.mScore=s;updateModal();}
-function adj(d){S.mScore=Math.max(1,S.mScore+d);updateModal();}
-function saveScore(){
-  const r=getRound(S.mCtx.roundId);
-  r.scores[r.players[S.mCtx.pIdx]][S.mCtx.hole]=S.mScore;
-  save();closeModal();renderScorecard();
+function quickSet(s){
+  S.mScore=s;
+  if(S.mCtx?.scramble)updateScrambleModal();else updateModal();
+}
+function adj(d){
+  S.mScore=Math.max(1,S.mScore+d);
+  if(S.mCtx?.scramble)updateScrambleModal();else updateModal();
 }
 function closeModal(){document.getElementById('score-modal').classList.remove('on');S.mCtx=null;}
 
@@ -1191,6 +1419,41 @@ function closeModal(){document.getElementById('score-modal').classList.remove('o
 function renderLeaderboard(){
   const r=curRound();if(!r)return;
   const isStab=r.scoring==='stableford';
+  const isScramble=r.scoring==='scramble';
+  const el=document.getElementById('lb-list');
+
+  if(isScramble){
+    const groups=r.groups||[];
+    const ss=r.scrambleScores||{};
+    const data=groups.map((g,gi)=>{
+      const scores=ss[gi]||[];
+      const played=scores.filter(s=>s>0).length;
+      const tot=scores.reduce((a,b)=>a+(b||0),0);
+      let vp=0;scores.forEach((s,i)=>{if(s>0)vp+=s-r.pars[i];});
+      // Team handicap = 25% of combined HCPs
+      const teamHcp=Math.round(g.players.reduce((a,p)=>a+(r.handicaps?.[p]??0),0)*0.25);
+      const net=tot>0?tot-teamHcp:0;
+      return{gi,g,played,tot,vp,net,teamHcp,sk:played>0?vp:9999};
+    }).sort((a,b)=>a.sk-b.sk);
+    const medals=['gold','silver','bronze'];
+    el.innerHTML=data.map((t,i)=>{
+      const vpStr=t.played===0?'—':(t.vp>0?'+'+t.vp:t.vp===0?'E':''+t.vp);
+      const vpCls=t.played===0?'':(t.vp<0?'under':t.vp>0?'over':'even');
+      const teeStr=t.g.teeTime?` · ${t.g.teeTime}`:'';
+      const em=['🥇','🥈','🥉'][i]||'';
+      return`<div class="lbrow ${medals[i]||''}">
+        <div class="lb-rank">${em||'#'+(i+1)}</div>
+        <div style="flex:1">
+          <div class="lb-name">🤝 Group ${t.gi+1}${teeStr}</div>
+          <div class="lb-sub">${t.g.players.join(', ')}</div>
+          <div class="lb-sub">Team HCP ${t.teamHcp} · ${t.tot>0?t.tot+' gross':'—'} · ${t.played}/${r.holes} holes</div>
+        </div>
+        <div class="lb-score"><div class="vs-par ${vpCls}">${vpStr}</div></div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
   const data=r.players.map(p=>{
     const {gross,played,vp,pts}=calcTotals(r,p);
     return{name:p,gross,played,vp,pts,hcp:r.handicaps?.[p]??0,sk:sortKey(r,p)};
@@ -1201,7 +1464,7 @@ function renderLeaderboard(){
     const gi=groups.findIndex(g=>g.players.includes(name));
     return gi>=0?`Group ${gi+1}${groups[gi].teeTime?' · '+groups[gi].teeTime:''}`:null;
   }
-  document.getElementById('lb-list').innerHTML=data.map((p,i)=>{
+  el.innerHTML=data.map((p,i)=>{
     let mainScore,mainCls,subInfo;
     if(isStab){
       mainScore=p.played>0?p.pts+' pts':'—';
@@ -1231,7 +1494,61 @@ function renderLeaderboard(){
 function renderStats(){
   const r=curRound();if(!r)return;
   const isStab=r.scoring==='stableford';
-  document.getElementById('st-content').innerHTML=r.players.map(p=>{
+  const isScramble=r.scoring==='scramble';
+  const el=document.getElementById('st-content');
+
+  if(isScramble){
+    const groups=r.groups||[];
+    const ss=r.scrambleScores||{};
+    const sd=r.scrambleDrives||{};
+    const minD=r.minDrives||2;
+    el.innerHTML=groups.map((g,gi)=>{
+      const scores=ss[gi]||[];
+      const drives=sd[gi]||[];
+      const tot=scores.reduce((a,b)=>a+(b||0),0);
+      const played=scores.filter(s=>s>0).length;
+      let vp=0;scores.forEach((s,i)=>{if(s>0)vp+=s-r.pars[i];});
+      const vpStr=played>0?(vp>0?'+'+vp:vp===0?'E':''+vp):'—';
+      let alb=0,eag=0,bir=0,par=0,bog=0,dbl=0,wrs=0;
+      scores.forEach((s,i)=>{
+        if(!s)return;const d=s-r.pars[i];
+        if(d<=-3)alb++;else if(d===-2)eag++;else if(d===-1)bir++;
+        else if(d===0)par++;else if(d===1)bog++;else if(d===2)dbl++;else wrs++;
+      });
+      // Drive counts per player
+      const driveCounts={};g.players.forEach(p=>driveCounts[p]=0);
+      drives.forEach(d=>{if(d&&driveCounts[d]!==undefined)driveCounts[d]++;});
+      const driveRows=g.players.map(p=>{
+        const cnt=driveCounts[p]||0;const ok=cnt>=minD;
+        return`<div class="sbox">
+          <div class="sl">${p.split(' ')[0]}</div>
+          <div class="sv ${ok?'g':'r'}">${cnt}</div>
+          <div style="font-size:10px;color:${ok?'var(--green)':'var(--red)'}">${ok?'✓ OK':'Min '+minD}</div>
+        </div>`;
+      }).join('');
+      const teamHcp=Math.round(g.players.reduce((a,p)=>a+(r.handicaps?.[p]??0),0)*0.25);
+      return`<div style="margin-bottom:20px">
+        <div class="sec-head">🤝 Group ${gi+1}${g.teeTime?' · '+g.teeTime:''}</div>
+        <div class="g4">
+          <div class="sbox"><div class="sl">Team Total</div><div class="sv">${tot||'—'}</div></div>
+          <div class="sbox"><div class="sl">vs Par</div><div class="sv ${vp<0?'g':vp>0?'r':''}">${vpStr}</div></div>
+          <div class="sbox"><div class="sl">Team HCP</div><div class="sv">${teamHcp}</div></div>
+          <div class="sbox"><div class="sl">Holes</div><div class="sv">${played}/${r.holes}</div></div>
+        </div>
+        <div class="sec-head" style="margin-top:8px">Drive Usage (min ${minD} each)</div>
+        <div class="g${Math.min(g.players.length,4)}">${driveRows}</div>
+        <div class="g4">
+          <div class="sbox"><div class="sl">Eagle+</div><div class="sv a">${eag+alb}</div></div>
+          <div class="sbox"><div class="sl">Birdie</div><div class="sv g">${bir}</div></div>
+          <div class="sbox"><div class="sl">Par</div><div class="sv">${par}</div></div>
+          <div class="sbox"><div class="sl">Bogey+</div><div class="sv r">${bog+dbl+wrs}</div></div>
+        </div>
+      </div>`;
+    }).join('');
+    return;
+  }
+
+  el.innerHTML=r.players.map(p=>{
     const sc=r.scores[p]||[];
     const hcp=r.handicaps?.[p]??0;
     let alb=0,eag=0,bir=0,par=0,bog=0,dbl=0,wrs=0,totalPts=0;
