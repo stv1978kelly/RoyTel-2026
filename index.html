@@ -628,9 +628,20 @@ function renderPlayerList(){
   document.getElementById('s-player-list').innerHTML=S.players.map((p,i)=>`
     <div class="player-item">
       <span class="pi-name">${p.name}</span>
-      <span class="pi-hcp">HCP ${p.hcp}</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span style="font-size:11px;color:var(--muted);font-weight:700">HCP</span>
+        <input type="number" min="0" max="54" step="0.1"
+          value="${p.hcp}"
+          onchange="updateHcp(${i},this.value)"
+          style="width:54px;padding:5px 6px;font-size:13px;font-weight:700;
+                 text-align:center;margin:0;border:2px solid var(--blue);
+                 color:var(--blue);background:#fff"/>
+      </div>
       <button class="del-btn" onclick="removePlayer(${i})">×</button>
     </div>`).join('');
+}
+function updateHcp(i, val){
+  S.players[i].hcp = parseFloat(val)||0;
 }
 function saveSetup(status){
   const date=document.getElementById('s-date').value;
