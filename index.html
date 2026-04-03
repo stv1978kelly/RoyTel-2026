@@ -34,7 +34,7 @@ label{font-size:11px;color:var(--blue);display:block;margin-bottom:4px;margin-to
 .scwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:8px}
 table{border-collapse:collapse;width:100%;font-size:11px}
 th,td{padding:5px 3px;text-align:center;border-bottom:1px solid var(--border)}
-th:first-child,td:first-child{text-align:left;padding-left:6px;min-width:85px;max-width:105px;position:sticky;left:0;background:#fff;font-weight:700;font-size:11px}
+th:first-child,td:first-child{text-align:left;padding-left:6px;min-width:100px;max-width:120px;position:sticky;left:0;background:#fff;font-weight:700;font-size:11px;overflow:hidden}
 thead tr:first-child th{background:var(--blue);color:#fff;font-weight:700;border-bottom:3px solid var(--red)}
 thead tr:first-child th:first-child{background:var(--blue)}
 thead tr:nth-child(2) td{background:var(--light);color:var(--blue);font-size:10px;font-weight:700;border-bottom:1px solid var(--border)}
@@ -167,11 +167,21 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
 /* Scorecard group divider */
 .sc-group-row td{background:var(--light)!important;color:var(--blue);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:6px 8px!important;border-top:2px solid var(--amber)!important;border-bottom:1px solid var(--border)!important}
 /* Stableford pts cell */
-.pts-cell{font-weight:900;font-size:12px}
+.pts-cell{font-weight:900;font-size:10px}
 .pts-0{color:#9ca3af}.pts-1{color:#d97706}.pts-2{color:#374151}
 .pts-3{color:#166534;background:#bbf7d0!important}.pts-4{color:#92400e;background:#fde68a!important}
 .pts-5{color:#581c87;background:#d8b4fe!important}
-/* Player picker modal */
+/* Saved players quick-add */
+.saved-players-wrap{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.saved-chip{display:flex;align-items:center;gap:0;border:2px solid var(--blue);overflow:hidden;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.saved-chip .sc-name{padding:6px 10px;font-size:12px;font-weight:700;color:var(--blue);background:#fff}
+.saved-chip .sc-hcp{padding:6px 8px;font-size:11px;font-weight:700;color:#fff;background:var(--blue)}
+.saved-chip:active .sc-name{background:var(--blue);color:#fff}
+.saved-chip.added .sc-name{background:var(--green);color:#fff;border-color:var(--green)}
+.saved-chip.added .sc-hcp{background:#15803d}
+/* DB player list */
+.db-player-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--blue);background:#f8f9ff;margin-bottom:5px}
+.db-player-item .pi-name{font-size:14px;font-weight:700;color:var(--blue)}
 .picker-modal{background:#fff;width:100%;max-width:480px;padding:24px 16px;border-top:6px solid var(--blue)}
 .picker-modal h3{font-size:18px;font-weight:900;color:var(--blue);margin-bottom:4px}
 .picker-modal p{font-size:13px;color:var(--muted);margin-bottom:20px}
@@ -254,8 +264,29 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
   <div class="sec-head" style="margin-top:16px">Completed</div>
   <div id="admin-done"></div>
   <div style="margin-top:20px">
+    <button class="btn btn-dark" onclick="showPage('page-players');renderPlayersPage()">👥 Manage Players</button>
     <button class="btn btn-white" onclick="adminLogout()">Log Out of Admin</button>
   </div>
+</div>
+
+<!-- ══ PLAYERS PAGE ══════════════════════════════════════ -->
+<div class="page" id="page-players">
+  <div class="topbar">
+    <div class="topbar-inner"><h1>Players</h1><p>Player Registry</p></div>
+    <div class="stripe"></div>
+  </div>
+  <div class="admin-bar">🔐 Admin</div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Saved players are available for quick-add when creating competitions.</p>
+
+  <div class="player-add-row">
+    <input class="name-inp" type="text" id="db-player-name" placeholder="Player name" maxlength="25"
+      onkeydown="if(event.key==='Enter')document.getElementById('db-player-hcp').focus()"/>
+    <input class="hcp-inp" type="number" id="db-player-hcp" placeholder="HCP" min="0" max="54" step="0.1"
+      onkeydown="if(event.key==='Enter')addPlayerToDb()" style="text-align:center"/>
+    <button class="btn-sm" onclick="addPlayerToDb()">Add</button>
+  </div>
+  <div id="db-player-list"></div>
+  <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()" style="margin-top:8px">← Back to Admin</button>
 </div>
 
 <!-- ══ SETUP / EDIT ══════════════════════════════════════ -->
@@ -282,6 +313,7 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
   </div>
 
   <label>Players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(Name + Handicap)</span></label>
+  <div id="s-saved-players" style="margin-bottom:10px"></div>
   <div class="player-add-row">
     <input class="name-inp" type="text" id="s-player" placeholder="Player name" maxlength="25"
       onkeydown="if(event.key==='Enter')document.getElementById('s-hcp').focus()"/>
@@ -426,11 +458,74 @@ const S={
 };
 
 // ── Storage ──────────────────────────────────────────────
+const PL_KEY='roytel2026_players';
 function load(){try{S.rounds=JSON.parse(localStorage.getItem(SK))||[];}catch(e){S.rounds=[];}}
 function save(){localStorage.setItem(SK,JSON.stringify(S.rounds));}
 function getPin(){return localStorage.getItem(PK)||DEF_PIN;}
 function getRound(id){return S.rounds.find(r=>r.id===id);}
 function curRound(){return getRound(S.currentId);}
+
+// ── Player Database ───────────────────────────────────────
+function loadPlayerDb(){try{return JSON.parse(localStorage.getItem(PL_KEY))||[];}catch(e){return[];}}
+function savePlayerDb(db){localStorage.setItem(PL_KEY,JSON.stringify(db));}
+function upsertPlayerDb(name,hcp){
+  const db=loadPlayerDb();
+  const i=db.findIndex(p=>p.name===name);
+  if(i>=0)db[i].hcp=hcp; else db.push({name,hcp});
+  savePlayerDb(db);
+}
+function removePlayerFromDb(name){
+  savePlayerDb(loadPlayerDb().filter(p=>p.name!==name));
+}
+function renderSavedPlayers(){
+  const db=loadPlayerDb();
+  const el=document.getElementById('s-saved-players');
+  if(!db.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:4px">No saved players yet — add players below to build your registry.</div>';return;}
+  const chips=db.map(p=>{
+    const already=S.players.find(sp=>sp.name===p.name);
+    return`<div class="saved-chip ${already?'added':''}" onclick="quickAddPlayer('${p.name}',${p.hcp})">
+      <span class="sc-name">${p.name}${already?' ✓':''}</span>
+      <span class="sc-hcp">HCP ${p.hcp}</span>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Saved Players — tap to add</div>
+    <div class="saved-players-wrap">${chips}</div>`;
+}
+function quickAddPlayer(name,hcp){
+  if(S.players.find(p=>p.name===name))return;
+  S.players.push({name,hcp});
+  renderPlayerList();renderGroups();renderSavedPlayers();
+}
+function renderPlayersPage(){
+  const db=loadPlayerDb();
+  document.getElementById('db-player-name').value='';
+  document.getElementById('db-player-hcp').value='';
+  const el=document.getElementById('db-player-list');
+  if(!db.length){el.innerHTML='<div class="empty-state"><div class="icon">👤</div><p>No players saved yet</p></div>';return;}
+  el.innerHTML=db.map((p,i)=>`
+    <div class="db-player-item">
+      <span class="pi-name">${p.name}</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span style="font-size:11px;color:var(--muted);font-weight:700">HCP</span>
+        <input type="number" min="0" max="54" step="0.1" value="${p.hcp}"
+          onchange="updateDbHcp('${p.name}',this.value)"
+          style="width:54px;padding:5px 6px;font-size:13px;font-weight:700;text-align:center;margin:0;border:2px solid var(--blue);color:var(--blue);background:#fff"/>
+      </div>
+      <button class="del-btn" onclick="deleteDbPlayer('${p.name}')">×</button>
+    </div>`).join('');
+}
+function addPlayerToDb(){
+  const name=document.getElementById('db-player-name').value.trim();
+  const hcp=parseFloat(document.getElementById('db-player-hcp').value)||0;
+  if(!name)return;
+  upsertPlayerDb(name,hcp);
+  renderPlayersPage();
+  document.getElementById('db-player-name').value='';
+  document.getElementById('db-player-hcp').value='';
+  document.getElementById('db-player-name').focus();
+}
+function updateDbHcp(name,val){upsertPlayerDb(name,parseFloat(val)||0);}
+function deleteDbPlayer(name){removePlayerFromDb(name);renderPlayersPage();}
 
 // ── Utils ─────────────────────────────────────────────────
 function genId(){
@@ -530,7 +625,8 @@ function refreshNav(pageId){
     const b=document.getElementById(id);if(b)b.classList.remove('on');
   });
   const map={'page-home':'nav-home','page-round':'nav-round',
-             'page-admin':'nav-admin','page-archive':'nav-admin','page-setup':'nav-admin'};
+             'page-admin':'nav-admin','page-archive':'nav-admin',
+             'page-setup':'nav-admin','page-players':'nav-admin'};
   const a=map[pageId];if(a){const b=document.getElementById(a);if(b)b.classList.add('on');}
 }
 
@@ -688,6 +784,7 @@ function initSetup(editId){
   document.getElementById('s-err').style.display='none';
   renderPlayerList();
   renderGroups();
+  renderSavedPlayers();
 }
 function setHoles(n){
   S.holes=n;
@@ -707,15 +804,15 @@ function addPlayer(){
   if(S.players.find(p=>p.name===name))return;
   const hcp=parseFloat(hcpInp.value)||0;
   S.players.push({name,hcp});
+  upsertPlayerDb(name,hcp);
   nameInp.value='';hcpInp.value='';
-  renderPlayerList();renderGroups();nameInp.focus();
+  renderPlayerList();renderGroups();renderSavedPlayers();nameInp.focus();
 }
 function removePlayer(i){
   const name=S.players[i].name;
   S.players.splice(i,1);
-  // Also remove from any group
   S.groups.forEach(g=>{const j=g.players.indexOf(name);if(j>-1)g.players.splice(j,1);});
-  renderPlayerList();renderGroups();
+  renderPlayerList();renderGroups();renderSavedPlayers();
 }
 function renderPlayerList(){
   document.getElementById('s-player-list').innerHTML=S.players.map((p,i)=>`
@@ -735,6 +832,7 @@ function renderPlayerList(){
 }
 function updateHcp(i, val){
   S.players[i].hcp = parseFloat(val)||0;
+  upsertPlayerDb(S.players[i].name, S.players[i].hcp);
 }
 
 // ── Groups ────────────────────────────────────────────────
@@ -947,7 +1045,7 @@ function buildPlayerRow(r,p,isStab){
     if(pts!==null)totalPts+=pts;
     const editable=canEdit;
     const click=editable?`onclick="openModal('${r.id}',${pi},${i})"` :'';
-    const display=sc>0?(isStab?`<span title="Gross:${sc}">${pts}</span>`:sc):'·';
+    const display=sc>0?(isStab?`${sc}/${pts}`:sc):'·';
     const cellCls=isStab&&sc>0?ptsClass(pts):cls;
     return `<td class="score-cell ${isStab?'pts-cell':''} ${editable?'editable':''} ${cellCls}" ${click}>${display}</td>`;
   }).join('');
