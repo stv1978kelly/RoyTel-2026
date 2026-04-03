@@ -87,10 +87,12 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
 .round-code{font-size:24px;font-weight:900;letter-spacing:5px;font-family:monospace;color:#fff}
 .badge-live{font-size:11px;font-weight:700;color:#4ade80;padding:3px 8px;border:1px solid #4ade80}
 .badge-done{font-size:11px;font-weight:700;color:#93b4e0;padding:3px 8px;border:1px solid #93b4e0}
+.badge-sched{font-size:11px;font-weight:700;color:#fbbf24;padding:3px 8px;border:1px solid #fbbf24}
 
 /* ── Round rows ── */
 .live-round-row{padding:14px 16px;margin-bottom:10px;border:2px solid var(--blue);border-left:5px solid var(--green);background:#fff;cursor:pointer}
-.live-round-row:active,.arc-row:active{background:var(--light)}
+.live-round-row:active,.arc-row:active,.sched-round-row:active{background:var(--light)}
+.sched-round-row{padding:14px 16px;margin-bottom:10px;border:2px solid var(--blue);border-left:5px solid #fbbf24;background:#fff;cursor:pointer}
 .arc-row{padding:12px 14px;margin-bottom:8px;border:2px solid var(--blue);border-left:5px solid var(--red);background:#fff;cursor:pointer}
 .rr-title{font-size:15px;font-weight:700;color:var(--blue);margin-bottom:3px}
 .rr-meta{font-size:12px;color:var(--muted)}
@@ -273,7 +275,10 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
 
   <button class="btn btn-green" onclick="initSetup();showPage('page-setup')">＋ Create New Competition</button>
 
-  <div class="sec-head" style="margin-top:4px">Live Competitions</div>
+  <div class="sec-head" style="margin-top:4px">Scheduled</div>
+  <div id="admin-sched"></div>
+
+  <div class="sec-head" style="margin-top:16px">Live Competitions</div>
   <div id="admin-live"></div>
 
   <div class="sec-head" style="margin-top:16px">Completed</div>
@@ -320,7 +325,8 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
   <div id="s-player-list"></div>
 
   <div id="s-err" class="err"></div>
-  <button class="btn btn-green" onclick="createRound()" style="margin-top:8px">▶ Start Competition</button>
+  <button class="btn btn-green" onclick="createRound('live')" style="margin-top:8px">▶ Start Competition Now</button>
+  <button class="btn btn-dark" onclick="createRound('scheduled')">📅 Schedule for Later</button>
   <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()">Cancel</button>
 </div>
 
@@ -354,6 +360,7 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
       <table id="sc-table"><thead></thead><tbody></tbody></table>
     </div>
     <div style="margin-top:14px">
+      <button class="btn btn-green" id="btn-start" onclick="startRound(S.currentId)" style="display:none">▶ Start Competition Now</button>
       <button class="btn btn-red" id="btn-finish" onclick="showPinPage('finish')" style="display:none">✓ Complete Competition</button>
       <button class="btn btn-white" id="btn-back" onclick="roundBack()">← Back</button>
     </div>
@@ -586,8 +593,24 @@ function adminLogout(){
 // ── Admin Dashboard ───────────────────────────────────────
 function renderAdmin(){
   load();
+  const sched=S.rounds.filter(r=>r.status==='scheduled');
   const live=S.rounds.filter(r=>r.status==='live');
   const done=S.rounds.filter(r=>r.status==='complete').slice().reverse();
+
+  document.getElementById('admin-sched').innerHTML=sched.length
+    ? sched.map(r=>`
+        <div class="sched-round-row">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="rr-title">${r.course}</div>
+            <span style="font-family:monospace;font-weight:900;font-size:15px;color:var(--blue);letter-spacing:3px">${r.id}</span>
+          </div>
+          <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.players.length} player${r.players.length!==1?'s':''}</div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-sm on" style="background:var(--green);border-color:var(--green);color:#fff" onclick="startRound('${r.id}')">▶ Start Now</button>
+            <button class="btn-sm" onclick="openRound('${r.id}')">View</button>
+          </div>
+        </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:10px 0">No scheduled competitions</div>';
 
   document.getElementById('admin-live').innerHTML=live.length
     ? live.map(r=>`
@@ -656,7 +679,7 @@ function renderPlayerList(){
       <button class="del-btn" onclick="removePlayer(${i})">×</button>
     </div>`).join('');
 }
-function createRound(){
+function createRound(status){
   const course=document.getElementById('s-course').value.trim();
   const date=document.getElementById('s-date').value;
   const err=document.getElementById('s-err');
@@ -666,9 +689,15 @@ function createRound(){
   const pars=Array.from({length:S.holes},(_,i)=>parseInt(document.getElementById('p-h'+i).value)||4);
   const scores={};
   S.players.forEach(p=>scores[p]=new Array(S.holes).fill(0));
-  const round={id:genId(),course,date,holes:S.holes,pars,players:[...S.players],scores,status:'live',created:Date.now()};
+  const round={id:genId(),course,date,holes:S.holes,pars,players:[...S.players],scores,status:status||'live',created:Date.now()};
   S.rounds.push(round); save();
   openRound(round.id);
+}
+function startRound(id){
+  load();
+  const r=getRound(id); if(!r) return;
+  r.status='live'; save();
+  openRound(id);
 }
 
 // ── Open Round ────────────────────────────────────────────
@@ -680,11 +709,21 @@ function openRound(id){
   document.getElementById('r-sub').textContent=`${r.players.length} player${r.players.length!==1?'s':''} · ${r.holes} holes`;
   document.getElementById('r-code').textContent=r.id;
   document.getElementById('r-date').textContent=fmtDate(r.date);
-  document.getElementById('r-badge').innerHTML=r.status==='live'
-    ?'<span class="badge-live">● LIVE</span>'
-    :'<span class="badge-done">COMPLETE</span>';
+  document.getElementById('r-badge').innerHTML=
+    r.status==='live'      ? '<span class="badge-live">● LIVE</span>'  :
+    r.status==='scheduled' ? '<span class="badge-sched">⏰ SCHEDULED</span>' :
+                             '<span class="badge-done">COMPLETE</span>';
   document.getElementById('r-admin-bar').style.display=S.isAdmin?'block':'none';
-  document.getElementById('btn-finish').style.display=(S.isAdmin&&r.status==='live')?'block':'none';
+  document.getElementById('r-admin-bar').textContent=
+    S.isAdmin && r.status==='scheduled' ? '🔐 Admin — Scheduled, not yet started'
+    : S.isAdmin && r.status==='live'    ? '🔐 Admin — Tap cells to edit scores'
+    : S.isAdmin                         ? '🔐 Admin'
+    : '';
+  // Show Start Now button for scheduled rounds (admin only)
+  const finishBtn=document.getElementById('btn-finish');
+  const startBtn=document.getElementById('btn-start');
+  finishBtn.style.display=(S.isAdmin&&r.status==='live')?'block':'none';
+  startBtn.style.display=(S.isAdmin&&r.status==='scheduled')?'block':'none';
   switchTab('sc');
   showPage('page-round');
 }
@@ -707,6 +746,25 @@ function switchTab(t){
 // ── Scorecard ─────────────────────────────────────────────
 function renderScorecard(){
   const r=curRound(); if(!r) return;
+
+  // Scheduled — show waiting message to players, info to admin
+  if(r.status==='scheduled' && !S.isAdmin){
+    document.querySelector('#sc-table thead').innerHTML='';
+    document.querySelector('#sc-table tbody').innerHTML='';
+    document.querySelector('#panel-sc .scwrap').innerHTML=
+      `<div class="empty-state" style="padding:40px 20px">
+        <div class="icon">⏰</div>
+        <p style="font-size:15px;font-weight:700;color:var(--blue);margin-bottom:6px">Competition Not Started Yet</p>
+        <p>The organiser will start this competition on ${fmtDate(r.date)}.<br>Check back soon!</p>
+      </div>`;
+    return;
+  }
+  // Restore scwrap if it was replaced
+  const scwrap=document.querySelector('#panel-sc .scwrap');
+  if(!scwrap.querySelector('table')){
+    scwrap.innerHTML='<table id="sc-table"><thead></thead><tbody></tbody></table>';
+  }
+
   const thead=document.querySelector('#sc-table thead');
   const tbody=document.querySelector('#sc-table tbody');
   const totPar=r.pars.reduce((a,b)=>a+b,0);
@@ -845,14 +903,19 @@ function renderArchive(){
   load();
   const all=[...S.rounds].reverse();
   document.getElementById('arc-list').innerHTML=all.length
-    ? all.map(r=>`
-        <div class="${r.status==='live'?'live-round-row':'arc-row'}" onclick="openRound('${r.id}')">
-          <div class="rr-title">${r.course}
-            ${r.status==='live'?'<span style="color:var(--green);font-size:11px;margin-left:6px">● LIVE</span>':''}
-          </div>
+    ? all.map(r=>{
+        const rowCls=r.status==='live'?'live-round-row':r.status==='scheduled'?'sched-round-row':'arc-row';
+        const badge=r.status==='live'
+          ?'<span style="color:var(--green);font-size:11px;margin-left:6px">● LIVE</span>'
+          :r.status==='scheduled'
+          ?'<span style="color:#fbbf24;font-size:11px;margin-left:6px">⏰ SCHEDULED</span>'
+          :'';
+        return `<div class="${rowCls}" onclick="openRound('${r.id}')">
+          <div class="rr-title">${r.course}${badge}</div>
           <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.players.join(', ')}</div>
           <div class="rr-meta" style="margin-top:2px">Winner: ${winner(r)} · Code: <b>${r.id}</b></div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : '<div class="empty-state"><div class="icon">📋</div><p>No competitions yet</p></div>';
 }
 
