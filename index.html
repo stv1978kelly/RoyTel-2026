@@ -1020,8 +1020,15 @@ function renderScorecard(){
 
 // ── Score Modal ───────────────────────────────────────────
 function openModal(roundId,pIdx,hole){
-  if(!S.isAdmin&&S.currentPlayer!==getRound(roundId)?.players[pIdx])return;
   const r=getRound(roundId);if(!r||r.status==='complete')return;
+  if(!S.isAdmin){
+    const targetPlayer=r.players[pIdx];
+    const groups=r.groups||[];
+    const myGroup=groups.find(g=>g.players.includes(S.currentPlayer));
+    const sameGroup=myGroup&&myGroup.players.includes(targetPlayer);
+    const isOwn=S.currentPlayer===targetPlayer;
+    if(!isOwn&&!sameGroup)return;
+  }
   S.mCtx={roundId,pIdx,hole};
   const par=r.pars[hole],si=r.si[hole],player=r.players[pIdx];
   const hcp=r.handicaps?.[player]??0;
