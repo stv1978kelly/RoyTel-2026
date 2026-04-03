@@ -149,11 +149,38 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
 .nav-btn{padding:12px 4px 10px;border:none;background:none;color:#93b4e0;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;flex-direction:column;align-items:center;gap:3px;-webkit-tap-highlight-color:transparent}
 .nav-btn.on{color:#fff;background:rgba(255,255,255,.1)}
 .nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* Groups */
+.group-card{border:2px solid var(--blue);border-left:5px solid var(--amber);background:#fff;margin-bottom:12px;overflow:hidden}
+.group-header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--light);border-bottom:1px solid var(--border)}
+.group-header .g-label{font-size:13px;font-weight:700;color:var(--blue);flex:1}
+.group-header input[type=time]{width:90px;padding:5px 6px;font-size:13px;margin:0;border:2px solid var(--blue);flex-shrink:0}
+.group-header .del-btn{color:var(--red);font-size:18px}
+.group-players{padding:8px 12px;display:flex;flex-wrap:wrap;gap:6px;min-height:36px}
+.group-player-chip{display:flex;align-items:center;gap:4px;padding:5px 10px;background:var(--blue);color:#fff;font-size:12px;font-weight:700}
+.group-player-chip button{background:none;border:none;color:#93b4e0;cursor:pointer;font-size:14px;padding:0 0 0 4px;line-height:1}
+.group-player-chip button:hover{color:#fff}
+.group-add-player{padding:8px 12px;border-top:1px solid var(--border)}
+.group-add-player select{margin:0;padding:7px 10px;font-size:13px}
+.unassigned-pool{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.pool-chip{padding:6px 12px;border:2px solid var(--blue);background:#fff;font-size:12px;font-weight:700;color:var(--blue);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pool-chip:active{background:var(--blue);color:#fff}
+/* Scorecard group divider */
+.sc-group-row td{background:var(--light)!important;color:var(--blue);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:6px 8px!important;border-top:2px solid var(--amber)!important;border-bottom:1px solid var(--border)!important}
 /* Stableford pts cell */
 .pts-cell{font-weight:900;font-size:12px}
 .pts-0{color:#9ca3af}.pts-1{color:#d97706}.pts-2{color:#374151}
 .pts-3{color:#166534;background:#bbf7d0!important}.pts-4{color:#92400e;background:#fde68a!important}
 .pts-5{color:#581c87;background:#d8b4fe!important}
+/* Player picker modal */
+.picker-modal{background:#fff;width:100%;max-width:480px;padding:24px 16px;border-top:6px solid var(--blue)}
+.picker-modal h3{font-size:18px;font-weight:900;color:var(--blue);margin-bottom:4px}
+.picker-modal p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.player-pick-btn{width:100%;padding:14px 16px;border:2px solid var(--blue);background:#fff;font-size:15px;font-weight:700;color:var(--blue);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.player-pick-btn:active{background:var(--blue);color:#fff}
+.player-pick-btn .hcp-tag{font-size:12px;font-weight:400;color:var(--muted)}
+/* Playing as bar */
+.playing-as-bar{background:var(--blue);color:#fff;font-size:13px;font-weight:700;padding:9px 16px;margin:0 -16px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid var(--amber)}
+.playing-as-bar button{background:none;border:1px solid #93b4e0;color:#93b4e0;font-size:11px;padding:3px 8px;cursor:pointer;font-weight:700;-webkit-tap-highlight-color:transparent}
 </style>
 </head>
 <body>
@@ -264,6 +291,14 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
   </div>
   <div id="s-player-list"></div>
 
+  <div style="margin-top:16px">
+    <div class="sec-head">Groups <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(max 4 players per group)</span></div>
+    <div id="s-unassigned-label" style="font-size:12px;color:var(--muted);margin-bottom:6px">Unassigned players:</div>
+    <div id="s-unassigned-pool" class="unassigned-pool"></div>
+    <div id="s-groups-list"></div>
+    <button class="btn-sm" onclick="addGroup()" style="margin-bottom:12px">＋ Add Group</button>
+  </div>
+
   <div id="s-err" class="err"></div>
   <button class="btn btn-green"  id="setup-start-btn"  onclick="saveSetup('live')"      style="margin-top:8px">▶ Start Now</button>
   <button class="btn btn-dark"   id="setup-sched-btn"  onclick="saveSetup('scheduled')">📅 Schedule for Later</button>
@@ -277,6 +312,10 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
     <div class="stripe"></div>
   </div>
   <div id="r-admin-bar" class="admin-bar" style="display:none">🔐 Admin</div>
+  <div id="r-playing-bar" class="playing-as-bar" style="display:none">
+    <span id="r-playing-name">Playing as —</span>
+    <button onclick="changePlayer()">Not you?</button>
+  </div>
   <div class="banner">
     <div>
       <div class="round-code" id="r-code">——</div>
@@ -313,6 +352,16 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
   <div class="admin-bar">🔐 Admin</div>
   <div id="arc-list"></div>
   <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()" style="margin-top:8px">← Back to Admin</button>
+</div>
+
+<!-- ══ PLAYER PICKER MODAL ══════════════════════════════ -->
+<div class="modal-bg" id="player-picker" onclick="if(event.target===this)closePlayerPicker()">
+  <div class="picker-modal">
+    <h3>Who are you?</h3>
+    <p>Select your name to enter and update your scores</p>
+    <div id="player-pick-list"></div>
+    <button class="btn btn-white" onclick="closePlayerPicker()" style="margin-top:4px">Cancel</button>
+  </div>
 </div>
 
 <!-- ══ SCORE MODAL ══════════════════════════════════════ -->
@@ -369,9 +418,9 @@ const COURSE = {
 const SK='roytel2026_rounds', PK='roytel2026_pin', DEF_PIN='1234';
 
 const S={
-  rounds:[],currentId:null,isAdmin:false,
+  rounds:[],currentId:null,isAdmin:false,currentPlayer:null,
   pinBuf:'',pinAction:null,
-  holes:9,scoring:'stroke',players:[],
+  holes:9,scoring:'stroke',players:[],groups:[],
   editId:null,
   mScore:0,mCtx:null
 };
@@ -490,6 +539,7 @@ function goHome(){
   const inp=document.getElementById('join-code-input');
   if(inp)inp.value='';
   document.getElementById('join-err').style.display='none';
+  S.currentPlayer=null;
   showPage('page-home');
 }
 function goRound(){if(S.currentId)openRound(S.currentId);else goHome();}
@@ -501,7 +551,41 @@ function joinRound(){
   load();
   const r=S.rounds.find(r=>r.id===code);
   if(!r){errEl.textContent='Code not found. Check with your organiser.';errEl.style.display='block';return;}
-  openRound(r.id);
+  S.currentId=r.id;
+  if(S.isAdmin){openRound(r.id);return;}
+  // Restore saved player for this round from sessionStorage
+  const saved=sessionStorage.getItem('roytel_player_'+r.id);
+  if(saved&&r.players.includes(saved)){S.currentPlayer=saved;openRound(r.id);}
+  else{S.currentPlayer=null;showPlayerPicker(r.id);}
+}
+
+// ── Player Picker ─────────────────────────────────────────
+function showPlayerPicker(roundId){
+  load();
+  const r=getRound(roundId);if(!r)return;
+  const list=document.getElementById('player-pick-list');
+  list.innerHTML=r.players.map(name=>{
+    const hcp=r.handicaps?.[name]??0;
+    return`<button class="player-pick-btn" onclick="selectPlayer('${name}','${roundId}')">
+      <span>${name}</span>
+      <span class="hcp-tag">HCP ${hcp}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('player-picker').classList.add('on');
+}
+function selectPlayer(name,roundId){
+  S.currentPlayer=name;
+  sessionStorage.setItem('roytel_player_'+roundId,name);
+  closePlayerPicker();
+  openRound(roundId);
+}
+function closePlayerPicker(){
+  document.getElementById('player-picker').classList.remove('on');
+}
+function changePlayer(){
+  S.currentPlayer=null;
+  sessionStorage.removeItem('roytel_player_'+S.currentId);
+  showPlayerPicker(S.currentId);
 }
 
 // ── PIN ───────────────────────────────────────────────────
@@ -588,8 +672,10 @@ function initSetup(editId){
     S.holes=r.holes;S.scoring=r.scoring||'stroke';
     // Rebuild players from round
     S.players=r.players.map(name=>({name,hcp:r.handicaps?.[name]??0}));
+    // Rebuild groups
+    S.groups=(r.groups||[]).map(g=>({...g,players:[...g.players]}));
   }else{
-    S.holes=9;S.scoring='stroke';S.players=[];
+    S.holes=9;S.scoring='stroke';S.players=[];S.groups=[];
     document.getElementById('s-date').value=new Date().toISOString().split('T')[0];
   }
 
@@ -601,6 +687,7 @@ function initSetup(editId){
   document.getElementById('s-hcp').value='';
   document.getElementById('s-err').style.display='none';
   renderPlayerList();
+  renderGroups();
 }
 function setHoles(n){
   S.holes=n;
@@ -621,9 +708,15 @@ function addPlayer(){
   const hcp=parseFloat(hcpInp.value)||0;
   S.players.push({name,hcp});
   nameInp.value='';hcpInp.value='';
-  renderPlayerList();nameInp.focus();
+  renderPlayerList();renderGroups();nameInp.focus();
 }
-function removePlayer(i){S.players.splice(i,1);renderPlayerList();}
+function removePlayer(i){
+  const name=S.players[i].name;
+  S.players.splice(i,1);
+  // Also remove from any group
+  S.groups.forEach(g=>{const j=g.players.indexOf(name);if(j>-1)g.players.splice(j,1);});
+  renderPlayerList();renderGroups();
+}
 function renderPlayerList(){
   document.getElementById('s-player-list').innerHTML=S.players.map((p,i)=>`
     <div class="player-item">
@@ -643,6 +736,103 @@ function renderPlayerList(){
 function updateHcp(i, val){
   S.players[i].hcp = parseFloat(val)||0;
 }
+
+// ── Groups ────────────────────────────────────────────────
+function addGroup(){
+  S.groups.push({id:'g'+(Date.now()),teeTime:'',players:[]});
+  renderGroups();
+}
+function removeGroup(gIdx){
+  S.groups.splice(gIdx,1);
+  renderGroups();
+}
+function assignPlayer(playerName,gIdx){
+  const g=S.groups[gIdx];
+  if(!g||g.players.length>=4)return;
+  if(g.players.includes(playerName))return;
+  // Remove from any other group first
+  S.groups.forEach(grp=>{ const i=grp.players.indexOf(playerName); if(i>-1)grp.players.splice(i,1); });
+  g.players.push(playerName);
+  renderGroups();
+}
+function removeFromGroup(playerName,gIdx){
+  const g=S.groups[gIdx];if(!g)return;
+  const i=g.players.indexOf(playerName);
+  if(i>-1)g.players.splice(i,1);
+  renderGroups();
+}
+function setGroupTeeTime(gIdx,val){
+  if(S.groups[gIdx])S.groups[gIdx].teeTime=val;
+}
+function getUnassigned(){
+  const assigned=S.groups.flatMap(g=>g.players);
+  return S.players.filter(p=>!assigned.includes(p.name));
+}
+function renderGroups(){
+  const unassigned=getUnassigned();
+  const pool=document.getElementById('s-unassigned-pool');
+  const label=document.getElementById('s-unassigned-label');
+  label.textContent=unassigned.length?'Unassigned — tap to add to a group:':'All players assigned to groups';
+  pool.innerHTML=unassigned.map(p=>
+    `<span class="pool-chip" onclick="pickGroupForPlayer('${p.name}')" title="Tap to assign">${p.name}</span>`
+  ).join('');
+
+  const gl=document.getElementById('s-groups-list');
+  gl.innerHTML=S.groups.map((g,gi)=>{
+    const canAdd=g.players.length<4&&getUnassigned().length>0;
+    const selectOpts=getUnassigned().map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+    return`<div class="group-card">
+      <div class="group-header">
+        <span class="g-label">Group ${gi+1}</span>
+        <input type="time" value="${g.teeTime}" onchange="setGroupTeeTime(${gi},this.value)"
+          placeholder="Tee time" title="Tee time"/>
+        <button class="del-btn" onclick="removeGroup(${gi})" title="Remove group">×</button>
+      </div>
+      <div class="group-players">
+        ${g.players.length?g.players.map(p=>`
+          <span class="group-player-chip">${p}
+            <button onclick="removeFromGroup('${p}',${gi})" title="Remove">×</button>
+          </span>`).join('')
+          :'<span style="color:var(--muted);font-size:12px">No players yet</span>'}
+      </div>
+      ${canAdd?`<div class="group-add-player">
+        <select id="gsel-${gi}" onchange="if(this.value){assignPlayer(this.value,${gi});this.value=''}">
+          <option value="">＋ Add player to group ${gi+1}…</option>
+          ${selectOpts}
+        </select>
+      </div>`:'<div style="padding:6px 12px;font-size:11px;color:var(--muted)">'+(g.players.length>=4?'Group full (max 4)':'')+'</div>'}
+    </div>`;
+  }).join('');
+}
+function pickGroupForPlayer(playerName){
+  // If only one group exists, add directly. Otherwise prompt via first available group
+  const available=S.groups.filter(g=>g.players.length<4&&!g.players.includes(playerName));
+  if(!available.length){
+    if(!S.groups.length){ addGroup(); }
+    setTimeout(()=>pickGroupForPlayer(playerName),50);
+    return;
+  }
+  if(available.length===1){ assignPlayer(playerName,S.groups.indexOf(available[0])); return; }
+  // Show inline picker — highlight groups that can accept
+  renderGroups();
+  // Add temporary "assign to group X" buttons next to this chip
+  document.querySelectorAll('.pool-chip').forEach(el=>{
+    if(el.textContent===playerName){
+      el.style.background='var(--amber)';el.style.color='#fff';
+      el.setAttribute('onclick','');
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;margin-bottom:4px';
+      available.forEach(g=>{
+        const gi=S.groups.indexOf(g);
+        const btn=document.createElement('button');
+        btn.className='btn-sm';btn.textContent='→ Group '+(gi+1);
+        btn.onclick=()=>assignPlayer(playerName,gi);
+        row.appendChild(btn);
+      });
+      el.insertAdjacentElement('afterend',row);
+    }
+  });
+}
 function saveSetup(status){
   const date=document.getElementById('s-date').value;
   const err=document.getElementById('s-err');
@@ -661,7 +851,7 @@ function saveSetup(status){
     const r=getRound(S.editId);
     if(!r)return;
     r.date=date;r.holes=S.holes;r.pars=pars;r.si=si;r.scoring=S.scoring;
-    r.handicaps=handicaps;
+    r.handicaps=handicaps;r.groups=S.groups.map(g=>({...g,players:[...g.players]}));
     // Preserve existing scores, add blanks for new players
     const newScores={};
     S.players.forEach(p=>{
@@ -681,7 +871,9 @@ function saveSetup(status){
       id:genId(),course:COURSE.name,date,holes:S.holes,
       pars,si,scoring:S.scoring,
       players:S.players.map(p=>p.name),
-      handicaps,scores,status,created:Date.now()
+      handicaps,scores,
+      groups:S.groups.map(g=>({...g,players:[...g.players]})),
+      status,created:Date.now()
     };
     S.rounds.push(round);save();
     openRound(round.id);
@@ -709,6 +901,15 @@ function openRound(id){
   adminBar.style.display=S.isAdmin?'block':'none';
   adminBar.textContent=S.isAdmin?
     (r.status==='scheduled'?'🔐 Admin — Scheduled, not yet started':'🔐 Admin — Tap scores to edit'):'';
+  // Playing-as bar for regular players
+  const playingBar=document.getElementById('r-playing-bar');
+  const playingName=document.getElementById('r-playing-name');
+  if(!S.isAdmin&&S.currentPlayer){
+    playingBar.style.display='flex';
+    playingName.textContent='Playing as '+S.currentPlayer;
+  }else{
+    playingBar.style.display='none';
+  }
   document.getElementById('btn-start').style.display=(S.isAdmin&&r.status==='scheduled')?'block':'none';
   document.getElementById('btn-finish').style.display=(S.isAdmin&&r.status==='live')?'block':'none';
   document.getElementById('btn-edit').style.display=(S.isAdmin&&r.status!=='complete')?'block':'none';
@@ -725,6 +926,59 @@ function switchTab(t){
   if(t==='sc')renderScorecard();
   if(t==='lb')renderLeaderboard();
   if(t==='st')renderStats();
+}
+
+function buildPlayerRow(r,p,isStab){
+  const pi=r.players.indexOf(p);
+  const hcp=r.handicaps?.[p]??0;
+  const isMe=!S.isAdmin&&S.currentPlayer===p;
+  let vp=0,gross=0,played=0,totalPts=0;
+  const cells=r.pars.map((par,i)=>{
+    const sc=r.scores[p][i];
+    const si=r.si[i];
+    const cls=sc>0?scoreClass(sc,par):'empty-c';
+    if(sc>0){gross+=sc;played++;vp+=sc-par;}
+    const pts=sc>0?stablefordPts(sc,par,hcp,si,r.holes):null;
+    if(pts!==null)totalPts+=pts;
+    const editable=(S.isAdmin||isMe)&&r.status==='live';
+    const click=editable?`onclick="openModal('${r.id}',${pi},${i})"` :'';
+    const display=sc>0?(isStab?`<span title="Gross:${sc}">${pts}</span>`:sc):'·';
+    const cellCls=isStab&&sc>0?ptsClass(pts):cls;
+    return `<td class="score-cell ${isStab?'pts-cell':''} ${editable?'editable':''} ${cellCls}" ${click}>${display}</td>`;
+  }).join('');
+  const meBadge=isMe?` <span style="font-size:10px;background:var(--amber);color:#fff;padding:1px 5px;font-weight:700">YOU</span>`:'';
+  const nameCell=`${p}${meBadge}<br><span style="font-size:10px;color:var(--muted)">HCP ${hcp}</span>`;
+  const rowStyle=isMe?` style="background:#fffbeb;"`:'';
+  if(isStab){
+    return `<tr${rowStyle}><td>${nameCell}</td>${cells}<td><b>${gross||'—'}</b></td><td class="${played>0?'green':''}"><b>${played>0?totalPts:'—'} pts</b></td></tr>`;
+  }else{
+    const diffStr=played===0?'—':(vp>0?'+'+vp:vp===0?'E':''+vp);
+    const diffCls=played===0?'':(vp<0?'green':vp>0?'red':'muted');
+    return `<tr${rowStyle}><td>${nameCell}</td>${cells}<td><b>${gross||'—'}</b></td><td class="${diffCls}"><b>${diffStr}</b></td></tr>`;
+  }
+}
+function buildScorecardRows(r,isStab){
+  const groups=r.groups||[];
+  const cols=r.holes+2; // hole cols + total + diff/pts
+  if(!groups.length){
+    return r.players.map(p=>buildPlayerRow(r,p,isStab)).join('');
+  }
+  // Build grouped rows
+  const assignedAll=groups.flatMap(g=>g.players);
+  const unassigned=r.players.filter(p=>!assignedAll.includes(p));
+  let html='';
+  groups.forEach((g,gi)=>{
+    const teeStr=g.teeTime?` · ${g.teeTime}`:'';
+    html+=`<tr class="sc-group-row"><td colspan="${cols+1}">Group ${gi+1}${teeStr}</td></tr>`;
+    g.players.filter(p=>r.players.includes(p)).forEach(p=>{
+      html+=buildPlayerRow(r,p,isStab);
+    });
+  });
+  if(unassigned.length){
+    html+=`<tr class="sc-group-row"><td colspan="${cols+1}">Ungrouped</td></tr>`;
+    unassigned.forEach(p=>{html+=buildPlayerRow(r,p,isStab);});
+  }
+  return html;
 }
 
 // ── Scorecard ─────────────────────────────────────────────
@@ -756,41 +1010,12 @@ function renderScorecard(){
     `<tr><td>Par</td>${r.pars.map(p=>`<td>${p}</td>`).join('')}<td>${totPar}</td>${extraParCols}</tr>`+
     `<tr><td>SI</td>${r.si.map(s=>`<td>${s}</td>`).join('')}<td>—</td>${isStab?'<td>—</td>':''}</tr>`;
 
-  tbody.innerHTML=r.players.map((p,pi)=>{
-    const hcp=r.handicaps?.[p]??0;
-    let vp=0,gross=0,played=0,totalPts=0;
-    const cells=r.pars.map((par,i)=>{
-      const sc=r.scores[p][i];
-      const si=r.si[i];
-      const cls=sc>0?scoreClass(sc,par):'empty-c';
-      if(sc>0){gross+=sc;played++;vp+=sc-par;}
-      const pts=sc>0?stablefordPts(sc,par,hcp,si,r.holes):null;
-      if(pts!==null)totalPts+=pts;
-      const editable=S.isAdmin&&r.status==='live';
-      const click=editable?`onclick="openModal('${r.id}',${pi},${i})"` :'';
-      // Show pts in cell if stableford, else gross
-      const display=sc>0?(isStab?`<span title="Gross:${sc}">${pts}</span>`:sc):'·';
-      const cellCls=isStab&&sc>0?ptsClass(pts):cls;
-      return `<td class="score-cell ${isStab?'pts-cell':''} ${editable?'editable':''} ${cellCls}" ${click}>${display}</td>`;
-    }).join('');
-
-    let mainTotal,mainClass;
-    if(isStab){
-      mainTotal=played>0?totalPts:'—';
-      mainClass=played>0?'green':'';
-    }else{
-      mainTotal=gross||'—';
-      const diffStr=played===0?'—':(vp>0?'+'+vp:vp===0?'E':''+vp);
-      const diffCls=played===0?'':(vp<0?'green':vp>0?'red':'muted');
-      return `<tr><td>${p}<br><span style="font-size:10px;color:var(--muted)">HCP ${hcp}</span></td>${cells}<td><b>${mainTotal}</b></td><td class="${diffCls}"><b>${diffStr}</b></td></tr>`;
-    }
-    return `<tr><td>${p}<br><span style="font-size:10px;color:var(--muted)">HCP ${hcp}</span></td>${cells}<td><b>${gross||'—'}</b></td><td class="${mainClass}"><b>${played>0?totalPts:'—'} pts</b></td></tr>`;
-  }).join('');
+  tbody.innerHTML=buildScorecardRows(r,isStab);
 }
 
 // ── Score Modal ───────────────────────────────────────────
 function openModal(roundId,pIdx,hole){
-  if(!S.isAdmin)return;
+  if(!S.isAdmin&&S.currentPlayer!==getRound(roundId)?.players[pIdx])return;
   const r=getRound(roundId);if(!r||r.status==='complete')return;
   S.mCtx={roundId,pIdx,hole};
   const par=r.pars[hole],si=r.si[hole],player=r.players[pIdx];
@@ -849,6 +1074,11 @@ function renderLeaderboard(){
     return{name:p,gross,played,vp,pts,hcp:r.handicaps?.[p]??0,sk:sortKey(r,p)};
   }).sort((a,b)=>a.sk-b.sk);
 
+  const groups=r.groups||[];
+  function playerGroup(name){
+    const gi=groups.findIndex(g=>g.players.includes(name));
+    return gi>=0?`Group ${gi+1}${groups[gi].teeTime?' · '+groups[gi].teeTime:''}`:null;
+  }
   document.getElementById('lb-list').innerHTML=data.map((p,i)=>{
     let mainScore,mainCls,subInfo;
     if(isStab){
@@ -861,13 +1091,14 @@ function renderLeaderboard(){
       mainCls=p.played===0?'':(p.vp<0?'under':p.vp>0?'over':'even');
       subInfo=p.gross>0?p.gross+' strokes':'—';
     }
+    const grpLabel=playerGroup(p.name);
     const rowCls=['gold','silver','bronze'][i]||'';
     const em=['🥇','🥈','🥉'][i]||'';
     return`<div class="lbrow ${rowCls}">
       <div class="lb-rank">${em||'#'+(i+1)}</div>
       <div>
         <div class="lb-name">${p.name}</div>
-        <div class="lb-sub">HCP ${p.hcp} · ${subInfo} · ${p.played}/${r.holes} holes</div>
+        <div class="lb-sub">HCP ${p.hcp}${grpLabel?' · '+grpLabel:''} · ${subInfo} · ${p.played}/${r.holes} holes</div>
       </div>
       <div class="lb-score"><div class="vs-par ${mainCls}">${mainScore}</div></div>
     </div>`;
