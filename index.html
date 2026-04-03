@@ -120,7 +120,7 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
 .player-add-row{display:flex;gap:6px;margin-bottom:8px;align-items:flex-start}
 .player-add-row input{margin-bottom:0}
 .player-add-row .name-inp{flex:2}
-.player-add-row .hcp-inp{flex:0 0 64px}
+.player-add-row .hcp-inp{flex:0 0 80px;text-align:center}
 .player-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--blue);background:#f8f9ff;margin-bottom:5px}
 .player-item .pi-name{font-size:14px;font-weight:700;color:var(--blue)}
 .player-item .pi-hcp{font-size:12px;color:var(--muted);font-weight:700}
@@ -317,8 +317,8 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
   <div class="player-add-row">
     <input class="name-inp" type="text" id="s-player" placeholder="Player name" maxlength="25"
       onkeydown="if(event.key==='Enter')document.getElementById('s-hcp').focus()"/>
-    <input class="hcp-inp" type="number" id="s-hcp" placeholder="HCP" min="0" max="54" step="1"
-      onkeydown="if(event.key==='Enter')addPlayer()" style="text-align:center"/>
+    <input class="hcp-inp" type="number" id="s-hcp" placeholder="HCP" min="0" max="54" step="0.1"
+      onkeydown="if(event.key==='Enter')addPlayer()" style="text-align:center;width:80px"/>
     <button class="btn-sm" onclick="addPlayer()">Add</button>
   </div>
   <div id="s-player-list"></div>
@@ -823,7 +823,7 @@ function renderPlayerList(){
         <input type="number" min="0" max="54" step="0.1"
           value="${p.hcp}"
           onchange="updateHcp(${i},this.value)"
-          style="width:54px;padding:5px 6px;font-size:13px;font-weight:700;
+          style="width:72px;padding:5px 8px;font-size:14px;font-weight:700;
                  text-align:center;margin:0;border:2px solid var(--blue);
                  color:var(--blue);background:#fff"/>
       </div>
