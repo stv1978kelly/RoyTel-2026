@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>RoyTel 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --blue:#0d2d6e;
+  --red:#c8102e;
+  --green:#16a34a;
+  --amber:#d97706;
+  --light:#f0f4ff;
+  --border:#dce3ee;
+  --muted:#6b7280;
+}
+
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#fff;min-height:100vh;color:#111}
+
+/* ── Pages ── */
+.page{display:none}
+.page.on{display:block;padding:0 16px 88px}
+
+/* ── Top Bar ── */
+.topbar{background:var(--blue);padding:20px 16px 0;border-bottom:6px solid var(--red);margin:0 -16px 20px}
+.topbar-inner{padding-bottom:16px}
+.topbar h1{font-size:24px;font-weight:900;color:#fff;letter-spacing:1px;margin-bottom:2px}
+.topbar p{font-size:11px;color:#93b4e0;letter-spacing:3px;text-transform:uppercase}
+.stripe{height:6px;background:#fff;margin:0 -16px}
+
+/* ── Buttons ── */
+.btn{width:100%;padding:13px;border:none;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;border-radius:0;letter-spacing:.5px;-webkit-tap-highlight-color:transparent}
+.btn-dark{background:var(--blue);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-white{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+.btn-sm{width:auto;padding:8px 16px;font-size:13px;font-weight:700;border:2px solid var(--blue);background:#fff;cursor:pointer;color:var(--blue);border-radius:0;-webkit-tap-highlight-color:transparent}
+.btn-sm.on{background:var(--blue);color:#fff}
+
+/* ── Forms ── */
+input,select{width:100%;padding:11px 12px;border:2px solid var(--blue);border-radius:0;font-size:14px;margin-bottom:10px;background:#fff;color:#111;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{border-color:var(--red);outline:none}
+label{font-size:11px;color:var(--blue);display:block;margin-bottom:4px;margin-top:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── Messages ── */
+.err{color:var(--red);font-size:13px;padding:10px;background:#fff0f0;border-left:4px solid var(--red);margin-bottom:10px;display:none}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:3px solid var(--blue);margin-bottom:14px;overflow-x:auto}
+.tab{padding:10px 14px;border:none;border-right:2px solid var(--red);background:#fff;font-size:13px;font-weight:700;cursor:pointer;color:var(--blue);white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.tab:last-child{border-right:none}
+.tab.on{background:var(--blue);color:#fff}
+.panel{display:none}
+.panel.on{display:block}
+
+/* ── Helpers ── */
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.sec-head{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1px;padding:8px 0 6px;border-bottom:2px solid var(--red);margin-bottom:12px}
+
+/* ── Scorecard ── */
+.scwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:8px}
+table{border-collapse:collapse;width:100%;font-size:11px}
+th,td{padding:6px 3px;text-align:center;border-bottom:1px solid var(--border)}
+th:first-child,td:first-child{text-align:left;padding-left:8px;min-width:90px;max-width:110px;position:sticky;left:0;background:#fff;font-weight:700;font-size:12px}
+thead tr:first-child th{background:var(--blue);color:#fff;font-weight:700;border-bottom:3px solid var(--red)}
+thead tr:first-child th:first-child{background:var(--blue)}
+thead tr:nth-child(2) td{background:var(--light);color:var(--blue);font-size:10px;font-weight:700;border-bottom:2px solid var(--red)}
+thead tr:nth-child(2) td:first-child{background:var(--light)}
+.score-cell{font-weight:700;min-width:26px}
+.score-cell.editable{cursor:pointer;transition:opacity .15s}
+.score-cell.editable:active{opacity:.7}
+
+/* Score colours */
+.alb{background:#d8b4fe!important;color:#581c87!important}
+.eag{background:#fde68a!important;color:#92400e!important}
+.bir{background:#bbf7d0!important;color:#166534!important}
+.par-c{background:#e5e7eb!important;color:#374151!important}
+.bog{background:#fca5a5!important;color:#7f1d1d!important}
+.dbl{background:#f87171!important;color:#450a0a!important}
+.tri{background:#dc2626!important;color:#fff!important}
+.empty-c{color:#d1d5db}
+
+/* ── Banner ── */
+.banner{background:var(--blue);padding:14px 16px;margin:0 -16px 14px;display:flex;justify-content:space-between;align-items:center;border-top:6px solid var(--red);border-bottom:6px solid var(--red)}
+.round-code{font-size:24px;font-weight:900;letter-spacing:5px;font-family:monospace;color:#fff}
+.badge-live{font-size:11px;font-weight:700;color:#4ade80;padding:3px 8px;border:1px solid #4ade80}
+.badge-done{font-size:11px;font-weight:700;color:#93b4e0;padding:3px 8px;border:1px solid #93b4e0}
+
+/* ── Round rows ── */
+.live-round-row{padding:14px 16px;margin-bottom:10px;border:2px solid var(--blue);border-left:5px solid var(--green);background:#fff;cursor:pointer}
+.live-round-row:active,.arc-row:active{background:var(--light)}
+.arc-row{padding:12px 14px;margin-bottom:8px;border:2px solid var(--blue);border-left:5px solid var(--red);background:#fff;cursor:pointer}
+.rr-title{font-size:15px;font-weight:700;color:var(--blue);margin-bottom:3px}
+.rr-meta{font-size:12px;color:var(--muted)}
+
+/* ── Leaderboard ── */
+.lbrow{display:flex;align-items:center;gap:12px;padding:13px 16px;margin-bottom:8px;border:2px solid var(--blue);background:#fff;border-left:4px solid var(--blue)}
+.lbrow.gold{background:var(--light);border-left:6px solid #fbbf24}
+.lbrow.silver{background:var(--light);border-left:6px solid #9ca3af}
+.lbrow.bronze{background:var(--light);border-left:6px solid #cd7c3a}
+.lb-rank{font-size:15px;font-weight:700;min-width:32px;color:var(--blue)}
+.lb-name{font-size:14px;font-weight:700;flex:1;color:#111}
+.lb-score{text-align:right}
+.vs-par{font-size:18px;font-weight:700}
+.vs-par.under{color:var(--green)}
+.vs-par.over{color:var(--red)}
+.vs-par.even{color:var(--muted)}
+
+/* ── Stats ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.sbox{background:var(--light);padding:10px 8px;border-top:3px solid var(--blue);border-bottom:3px solid var(--red);border-left:1px solid var(--blue);border-right:1px solid var(--blue);text-align:center}
+.sbox .sl{font-size:10px;color:var(--blue);margin-bottom:3px;font-weight:700;text-transform:uppercase}
+.sbox .sv{font-size:20px;font-weight:700;color:var(--blue)}
+.sbox .sv.g{color:var(--green)}
+.sbox .sv.r{color:var(--red)}
+.sbox .sv.a{color:var(--amber)}
+
+/* ── Score Modal ── */
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(13,45,110,.75);z-index:1000;align-items:flex-end;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:#fff;width:100%;max-width:480px;padding:20px 16px;border-top:6px solid var(--red)}
+.modal h3{font-size:17px;font-weight:700;color:var(--blue);margin-bottom:2px}
+.modal-meta{font-size:13px;color:var(--muted);margin-bottom:12px}
+.score-label{text-align:center;font-size:14px;font-weight:700;min-height:22px;margin-bottom:4px;letter-spacing:.5px}
+.srow{display:flex;align-items:center;gap:16px;margin:8px 0 12px;justify-content:center}
+.sbig{font-size:60px;font-weight:900;min-width:80px;text-align:center;color:var(--blue);line-height:1}
+.pm{font-size:30px;padding:10px 24px;border:2px solid var(--blue);background:#fff;cursor:pointer;font-weight:700;color:var(--blue);-webkit-tap-highlight-color:transparent;border-radius:0}
+.pm:active{background:var(--blue);color:#fff}
+.modal-actions{display:flex;gap:8px;margin-bottom:14px}
+.modal-actions .btn{margin-bottom:0;flex:1}
+.quick-row{display:grid;gap:5px;margin-top:4px}
+.hbtn{padding:8px 2px;border:2px solid var(--blue);background:#fff;font-size:12px;font-weight:700;cursor:pointer;text-align:center;color:var(--blue);-webkit-tap-highlight-color:transparent;line-height:1.3}
+.hbtn.on{outline:3px solid var(--blue);outline-offset:-3px}
+.hbtn.alb-b{background:#d8b4fe;border-color:#7c3aed;color:#581c87}
+.hbtn.eag-b{background:#fde68a;border-color:#d97706;color:#92400e}
+.hbtn.bir-b{background:#bbf7d0;border-color:var(--green);color:#166534}
+.hbtn.par-b{background:#e5e7eb;border-color:#9ca3af;color:#374151}
+.hbtn.bog-b{background:#fca5a5;border-color:var(--red);color:#7f1d1d}
+.hbtn.dbl-b{background:#f87171;border-color:#991b1b;color:#450a0a}
+.hbtn.tri-b{background:#dc2626;border-color:#7f1d1d;color:#fff}
+
+/* ── PIN ── */
+.pin-dots{display:flex;gap:14px;justify-content:center;margin:24px 0}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--blue);background:#fff;transition:background .15s}
+.pin-dot.filled{background:var(--blue)}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:280px;margin:0 auto}
+.pin-key{height:68px;border:2px solid var(--blue);background:#fff;font-size:24px;font-weight:700;cursor:pointer;color:var(--blue);border-radius:0;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.pin-key:active{background:var(--blue);color:#fff}
+.pin-clr{border-color:var(--red);color:var(--red)}
+.pin-clr:active{background:var(--red);color:#fff}
+.pin-ok{background:var(--blue);color:#fff}
+.pin-ok:active{background:var(--red)}
+
+/* ── Setup ── */
+.par-grid{display:grid;gap:6px;margin-bottom:12px}
+.par-cell-in{display:flex;flex-direction:column;align-items:center;gap:2px}
+.par-cell-in span{font-size:10px;color:var(--muted);font-weight:700}
+.par-cell-in select{padding:5px 2px;font-size:12px;text-align:center;margin:0;min-width:0}
+.player-add-row{display:flex;gap:8px;margin-bottom:8px}
+.player-add-row input{margin-bottom:0;flex:1}
+.player-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--blue);background:#f8f9ff;margin-bottom:5px}
+.player-item span{font-size:14px;font-weight:700;color:var(--blue)}
+.del-btn{background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;padding:0 4px;font-weight:700;line-height:1}
+
+/* ── Admin bar ── */
+.admin-bar{background:var(--red);color:#fff;font-size:11px;font-weight:700;text-align:center;padding:5px;letter-spacing:1px;text-transform:uppercase;margin:0 -16px 14px}
+
+/* ── Join screen ── */
+.join-hero{text-align:center;padding:24px 0 16px}
+.join-hero .icon{font-size:56px;margin-bottom:10px}
+.join-hero h2{font-size:20px;font-weight:900;color:var(--blue);margin-bottom:6px}
+.join-hero p{font-size:13px;color:var(--muted);line-height:1.5}
+#join-code-input{text-transform:uppercase;text-align:center;font-size:28px;letter-spacing:10px;font-weight:900;padding:14px 8px;color:var(--blue)}
+.admin-link{text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--border)}
+.admin-link button{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:8px;text-decoration:underline;-webkit-tap-highlight-color:transparent}
+
+/* ── Misc ── */
+.green{color:var(--green)}.red{color:var(--red)}.muted{color:var(--muted)}
+.empty-state{text-align:center;padding:36px 20px;color:var(--muted)}
+.empty-state .icon{font-size:36px;margin-bottom:10px}
+.empty-state p{font-size:14px}
+
+/* ── Bottom Nav ── */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--blue);display:grid;border-top:4px solid var(--red);z-index:100}
+.nav-btn{padding:12px 4px 10px;border:none;background:none;color:#93b4e0;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;flex-direction:column;align-items:center;gap:3px;-webkit-tap-highlight-color:transparent;position:relative}
+.nav-btn.on{color:#fff;background:rgba(255,255,255,.1)}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ JOIN / HOME ══════════════════════ -->
+<div class="page on" id="page-home">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1>RoyTel 2026</h1>
+      <p>Dalmahoy Golf &amp; Country Club</p>
+    </div>
+    <div class="stripe"></div>
+  </div>
+
+  <div class="join-hero">
+    <div class="icon">⛳</div>
+    <h2>Join a Competition</h2>
+    <p>Enter the 6-digit code given to you<br>by the competition organiser</p>
+  </div>
+
+  <label>Competition Code</label>
+  <input type="text" id="join-code-input" placeholder="A B C 1 2 3"
+    maxlength="6" autocomplete="off" autocorrect="off" spellcheck="false"
+    oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"
+    onkeydown="if(event.key==='Enter')joinRound()"/>
+  <div id="join-err" class="err">Competition code not found. Check with your organiser.</div>
+  <button class="btn btn-dark" onclick="joinRound()">Join Competition</button>
+
+  <div class="admin-link">
+    <button onclick="showPinPage('admin-login')">Admin Login</button>
+  </div>
+</div>
+
+<!-- ══════════════════ PIN ════════════════════════════ -->
+<div class="page" id="page-pin">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1 id="pin-title">Admin Login</h1>
+      <p id="pin-sub">Enter your PIN to continue</p>
+    </div>
+    <div class="stripe"></div>
+  </div>
+
+  <div style="max-width:300px;margin:0 auto">
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div id="pin-err" class="err" style="text-align:center">Incorrect PIN — try again</div>
+    <div class="pin-grid">
+      <button class="pin-key" onclick="pk('1')">1</button>
+      <button class="pin-key" onclick="pk('2')">2</button>
+      <button class="pin-key" onclick="pk('3')">3</button>
+      <button class="pin-key" onclick="pk('4')">4</button>
+      <button class="pin-key" onclick="pk('5')">5</button>
+      <button class="pin-key" onclick="pk('6')">6</button>
+      <button class="pin-key" onclick="pk('7')">7</button>
+      <button class="pin-key" onclick="pk('8')">8</button>
+      <button class="pin-key" onclick="pk('9')">9</button>
+      <button class="pin-key pin-clr" onclick="pclr()">✕</button>
+      <button class="pin-key" onclick="pk('0')">0</button>
+      <button class="pin-key pin-ok" onclick="psub()">✓</button>
+    </div>
+    <div style="margin-top:16px">
+      <button class="btn btn-white" onclick="pinCancel()">Cancel</button>
+    </div>
+    <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)">Default PIN: 1234</div>
+  </div>
+</div>
+
+<!-- ══════════════════ ADMIN DASHBOARD ══════════════════ -->
+<div class="page" id="page-admin">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1>Admin</h1>
+      <p>Competition Management</p>
+    </div>
+    <div class="stripe"></div>
+  </div>
+  <div class="admin-bar">🔐 Admin Session Active</div>
+
+  <button class="btn btn-green" onclick="initSetup();showPage('page-setup')">＋ Create New Competition</button>
+
+  <div class="sec-head" style="margin-top:4px">Live Competitions</div>
+  <div id="admin-live"></div>
+
+  <div class="sec-head" style="margin-top:16px">Completed</div>
+  <div id="admin-done"></div>
+
+  <div style="margin-top:20px">
+    <button class="btn btn-white" onclick="adminLogout()">Log Out of Admin</button>
+  </div>
+</div>
+
+<!-- ══════════════════ SETUP ════════════════════════════ -->
+<div class="page" id="page-setup">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1>New Competition</h1>
+      <p>Set up the scorecard</p>
+    </div>
+    <div class="stripe"></div>
+  </div>
+  <div class="admin-bar">🔐 Admin</div>
+
+  <label>Course</label>
+  <input type="text" id="s-course" value="Dalmahoy Golf and Country Club" readonly
+    style="background:var(--light);color:var(--blue);font-weight:700;cursor:default"/>
+
+  <label>Date</label>
+  <input type="date" id="s-date"/>
+
+  <label>Number of Holes</label>
+  <div class="row">
+    <button class="btn-sm on" id="h9"  onclick="setHoles(9)">9 Holes</button>
+    <button class="btn-sm"    id="h18" onclick="setHoles(18)">18 Holes</button>
+  </div>
+
+  <label>Par per Hole</label>
+  <div id="s-par-grid" class="par-grid"></div>
+
+  <label>Players</label>
+  <div class="player-add-row">
+    <input type="text" id="s-player" placeholder="Player name" maxlength="25"
+      onkeydown="if(event.key==='Enter')addPlayer()"/>
+    <button class="btn-sm" onclick="addPlayer()">Add</button>
+  </div>
+  <div id="s-player-list"></div>
+
+  <div id="s-err" class="err"></div>
+  <button class="btn btn-green" onclick="createRound()" style="margin-top:8px">▶ Start Competition</button>
+  <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()">Cancel</button>
+</div>
+
+<!-- ══════════════════ ROUND ════════════════════════════ -->
+<div class="page" id="page-round">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1 id="r-title">Competition</h1>
+      <p id="r-sub">Scorecard</p>
+    </div>
+    <div class="stripe"></div>
+  </div>
+  <div id="r-admin-bar" class="admin-bar" style="display:none">🔐 Admin — Tap cells to edit scores</div>
+
+  <div class="banner">
+    <div>
+      <div class="round-code" id="r-code">——</div>
+      <div style="font-size:11px;color:#93b4e0;margin-top:2px" id="r-date"></div>
+    </div>
+    <div id="r-badge"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" id="tab-sc" onclick="switchTab('sc')">Scorecard</button>
+    <button class="tab"    id="tab-lb" onclick="switchTab('lb')">Leaderboard</button>
+    <button class="tab"    id="tab-st" onclick="switchTab('st')">Stats</button>
+  </div>
+
+  <div class="panel on" id="panel-sc">
+    <div class="scwrap">
+      <table id="sc-table"><thead></thead><tbody></tbody></table>
+    </div>
+    <div style="margin-top:14px">
+      <button class="btn btn-red" id="btn-finish" onclick="showPinPage('finish')" style="display:none">✓ Complete Competition</button>
+      <button class="btn btn-white" id="btn-back" onclick="roundBack()">← Back</button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-lb">
+    <div id="lb-list"></div>
+  </div>
+
+  <div class="panel" id="panel-st">
+    <div id="st-content"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ ARCHIVE ══════════════════════════ -->
+<div class="page" id="page-archive">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1>Archives</h1>
+      <p>All competitions</p>
+    </div>
+    <div class="stripe"></div>
+  </div>
+  <div class="admin-bar">🔐 Admin</div>
+  <div id="arc-list"></div>
+  <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()" style="margin-top:8px">← Back to Admin</button>
+</div>
+
+<!-- ══════════════════ SCORE MODAL ═════════════════════ -->
+<div class="modal-bg" id="score-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h3 id="m-title">Hole 1</h3>
+    <div class="modal-meta" id="m-meta">Par 4 · Player</div>
+    <div class="score-label" id="m-label"></div>
+    <div class="srow">
+      <button class="pm" onclick="adj(-1)">−</button>
+      <div class="sbig" id="m-score">4</div>
+      <button class="pm" onclick="adj(1)">+</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-green" onclick="saveScore()">Save</button>
+      <button class="btn btn-white" onclick="closeModal()">Cancel</button>
+    </div>
+    <div class="quick-row" id="m-quick"></div>
+  </div>
+</div>
+
+<!-- ══════════════════ BOTTOM NAV ═══════════════════════ -->
+<nav class="bottom-nav" id="bottom-nav" style="grid-template-columns:repeat(2,1fr)">
+  <button class="nav-btn on" id="nav-home" onclick="goHome()">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Join
+  </button>
+  <button class="nav-btn" id="nav-round" onclick="goRound()">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+    Scorecard
+  </button>
+</nav>
+
+<script>
+// ╔══════════════════════════════════════════════════════════╗
+// ║  ROYTEL 2026 — GOLF SCORECARD                           ║
+// ║  Players join via code · Admin has full PIN access      ║
+// ╚══════════════════════════════════════════════════════════╝
+
+const SK      = 'roytel2026_rounds';
+const PK      = 'roytel2026_pin';
+const DEF_PIN = '1234';
+
+const S = {
+  rounds:    [],
+  currentId: null,
+  isAdmin:   false,
+  pinBuf:    '',
+  pinAction: null,
+  holes:     9,
+  players:   [],
+  mScore:    0,
+  mCtx:      null
+};
+
+// ── Storage ──────────────────────────────────────────────
+function load()   { try{ S.rounds=JSON.parse(localStorage.getItem(SK))||[]; }catch(e){ S.rounds=[]; } }
+function save()   { localStorage.setItem(SK, JSON.stringify(S.rounds)); }
+function getPin() { return localStorage.getItem(PK)||DEF_PIN; }
+function getRound(id){ return S.rounds.find(r=>r.id===id); }
+function curRound()  { return getRound(S.currentId); }
+
+// ── Utilities ─────────────────────────────────────────────
+function genId(){
+  const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
+}
+function fmtDate(d){
+  if(!d) return '';
+  return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+function vpLabel(d){
+  const m={'-4':'Condor','-3':'Albatross','-2':'Eagle','-1':'Birdie','0':'Par','1':'Bogey','2':'Double','3':'Triple'};
+  return m[String(d)]||(d>0?'+'+d:''+d);
+}
+function scoreClass(s,par){
+  if(!s||!par) return '';
+  const d=s-par;
+  if(d<=-3)return'alb'; if(d===-2)return'eag'; if(d===-1)return'bir';
+  if(d===0) return'par-c'; if(d===1)return'bog'; if(d===2)return'dbl';
+  return'tri';
+}
+function scoreBtnClass(s,par){
+  if(!s||!par) return '';
+  const d=s-par;
+  if(d<=-3)return'alb-b'; if(d===-2)return'eag-b'; if(d===-1)return'bir-b';
+  if(d===0) return'par-b'; if(d===1) return'bog-b'; if(d===2) return'dbl-b';
+  return'tri-b';
+}
+function calcTotals(round,player){
+  const sc=round.scores[player]||[];
+  let total=0,played=0,vpNum=0;
+  sc.forEach((s,i)=>{ if(s>0){ total+=s; played++; vpNum+=s-round.pars[i]; }});
+  return {total,played,vp:played>0?vpNum:9999};
+}
+function winner(round){
+  if(!round.players.length) return '—';
+  let best=null,bp='';
+  round.players.forEach(p=>{
+    const {vp}=calcTotals(round,p);
+    if(best===null||vp<best){best=vp;bp=p;}
+  });
+  return bp||'—';
+}
+
+// ── Navigation ────────────────────────────────────────────
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  const el=document.getElementById(id);
+  if(el){ el.classList.add('on'); window.scrollTo(0,0); }
+  refreshNav(id);
+}
+
+function refreshNav(pageId){
+  const nav=document.getElementById('bottom-nav');
+  // Manage admin nav button
+  let adminBtn=document.getElementById('nav-admin');
+  if(S.isAdmin && !adminBtn){
+    adminBtn=document.createElement('button');
+    adminBtn.id='nav-admin';
+    adminBtn.className='nav-btn';
+    adminBtn.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Admin`;
+    adminBtn.onclick=()=>{ showPage('page-admin'); renderAdmin(); };
+    nav.appendChild(adminBtn);
+  } else if(!S.isAdmin && adminBtn){
+    adminBtn.remove();
+  }
+  // Columns
+  const cols=S.isAdmin?3:2;
+  nav.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  // Active states
+  ['nav-home','nav-round','nav-admin'].forEach(id=>{
+    const b=document.getElementById(id); if(b)b.classList.remove('on');
+  });
+  const map={'page-home':'nav-home','page-round':'nav-round',
+             'page-admin':'nav-admin','page-archive':'nav-admin','page-setup':'nav-admin'};
+  const active=map[pageId];
+  if(active){ const b=document.getElementById(active); if(b)b.classList.add('on'); }
+}
+
+// ── Home / Join ───────────────────────────────────────────
+function goHome(){
+  const inp=document.getElementById('join-code-input');
+  if(inp) inp.value='';
+  document.getElementById('join-err').style.display='none';
+  showPage('page-home');
+}
+function goRound(){
+  if(S.currentId) openRound(S.currentId);
+  else goHome();
+}
+function joinRound(){
+  const code=document.getElementById('join-code-input').value.trim().toUpperCase();
+  const errEl=document.getElementById('join-err');
+  errEl.style.display='none';
+  if(code.length<6){ errEl.textContent='Please enter a valid 6-character code.'; errEl.style.display='block'; return; }
+  load();
+  const r=S.rounds.find(r=>r.id===code);
+  if(!r){ errEl.textContent='Competition code not found. Check with your organiser.'; errEl.style.display='block'; return; }
+  openRound(r.id);
+}
+
+// ── PIN ───────────────────────────────────────────────────
+function showPinPage(action){
+  S.pinAction=action; S.pinBuf='';
+  renderPinDots();
+  document.getElementById('pin-err').style.display='none';
+  const titles={
+    'admin-login':['Admin Login',   'Enter your PIN to continue'],
+    'finish':     ['Complete Round','Enter PIN to finalise the competition'],
+  };
+  const t=titles[action]||['Enter PIN','Admin access required'];
+  document.getElementById('pin-title').textContent=t[0];
+  document.getElementById('pin-sub').textContent=t[1];
+  showPage('page-pin');
+}
+function renderPinDots(){
+  for(let i=0;i<4;i++)
+    document.getElementById('pd'+i).classList.toggle('filled',i<S.pinBuf.length);
+}
+function pk(k){ if(S.pinBuf.length>=4)return; S.pinBuf+=k; renderPinDots(); if(S.pinBuf.length===4)setTimeout(psub,200); }
+function pclr(){ S.pinBuf=S.pinBuf.slice(0,-1); renderPinDots(); document.getElementById('pin-err').style.display='none'; }
+function psub(){
+  if(S.pinBuf.length<4) return;
+  if(S.pinBuf===getPin()){
+    const a=S.pinAction; S.pinBuf='';
+    if(a==='admin-login'){ S.isAdmin=true; showPage('page-admin'); renderAdmin(); }
+    if(a==='finish')     { finishRound(); }
+  } else {
+    document.getElementById('pin-err').style.display='block';
+    S.pinBuf=''; renderPinDots();
+  }
+}
+function pinCancel(){
+  // Return to appropriate page
+  if(S.pinAction==='finish') openRound(S.currentId);
+  else goHome();
+}
+function adminLogout(){
+  S.isAdmin=false;
+  goHome();
+}
+
+// ── Admin Dashboard ───────────────────────────────────────
+function renderAdmin(){
+  load();
+  const live=S.rounds.filter(r=>r.status==='live');
+  const done=S.rounds.filter(r=>r.status==='complete').slice().reverse();
+
+  document.getElementById('admin-live').innerHTML=live.length
+    ? live.map(r=>`
+        <div class="live-round-row" onclick="openRound('${r.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="rr-title">${r.course}</div>
+            <span style="font-family:monospace;font-weight:900;font-size:15px;color:var(--blue);letter-spacing:3px">${r.id}</span>
+          </div>
+          <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.players.length} player${r.players.length!==1?'s':''}</div>
+        </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:10px 0">No live competitions</div>';
+
+  const doneHTML=done.slice(0,6).map(r=>`
+    <div class="arc-row" onclick="openRound('${r.id}')">
+      <div class="rr-title">${r.course}</div>
+      <div class="rr-meta">${fmtDate(r.date)} · Winner: ${winner(r)} · Code: <b>${r.id}</b></div>
+    </div>`).join('');
+  const viewAll=done.length>6
+    ?`<button class="btn btn-white" style="margin-top:4px" onclick="showPage('page-archive');renderArchive()">View All Archives (${done.length})</button>`:'';
+  document.getElementById('admin-done').innerHTML=done.length
+    ? doneHTML+viewAll
+    : '<div style="color:var(--muted);font-size:13px;padding:10px 0">No completed competitions yet</div>';
+}
+
+// ── Setup ─────────────────────────────────────────────────
+function initSetup(){
+  S.holes=9; S.players=[];
+  document.getElementById('s-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('h9').classList.add('on');
+  document.getElementById('h18').classList.remove('on');
+  document.getElementById('s-player-list').innerHTML='';
+  document.getElementById('s-err').style.display='none';
+  buildParGrid();
+}
+function setHoles(n){
+  S.holes=n;
+  document.getElementById('h9').classList.toggle('on',n===9);
+  document.getElementById('h18').classList.toggle('on',n===18);
+  buildParGrid();
+}
+function buildParGrid(){
+  const g=document.getElementById('s-par-grid');
+  g.style.gridTemplateColumns=`repeat(${Math.min(S.holes,9)},1fr)`;
+  g.innerHTML=Array.from({length:S.holes},(_,i)=>`
+    <div class="par-cell-in">
+      <span>H${i+1}</span>
+      <select id="p-h${i}">
+        <option value="3">3</option>
+        <option value="4" selected>4</option>
+        <option value="5">5</option>
+      </select>
+    </div>`).join('');
+}
+function addPlayer(){
+  const inp=document.getElementById('s-player');
+  const name=inp.value.trim();
+  if(!name||S.players.includes(name)) return;
+  S.players.push(name); inp.value='';
+  renderPlayerList(); inp.focus();
+}
+function removePlayer(i){ S.players.splice(i,1); renderPlayerList(); }
+function renderPlayerList(){
+  document.getElementById('s-player-list').innerHTML=S.players.map((p,i)=>`
+    <div class="player-item">
+      <span>${p}</span>
+      <button class="del-btn" onclick="removePlayer(${i})">×</button>
+    </div>`).join('');
+}
+function createRound(){
+  const course=document.getElementById('s-course').value.trim();
+  const date=document.getElementById('s-date').value;
+  const err=document.getElementById('s-err');
+  err.style.display='none';
+  if(!date)         { err.textContent='Please select a date.'; err.style.display='block'; return; }
+  if(!S.players.length){ err.textContent='Add at least one player.'; err.style.display='block'; return; }
+  const pars=Array.from({length:S.holes},(_,i)=>parseInt(document.getElementById('p-h'+i).value)||4);
+  const scores={};
+  S.players.forEach(p=>scores[p]=new Array(S.holes).fill(0));
+  const round={id:genId(),course,date,holes:S.holes,pars,players:[...S.players],scores,status:'live',created:Date.now()};
+  S.rounds.push(round); save();
+  openRound(round.id);
+}
+
+// ── Open Round ────────────────────────────────────────────
+function openRound(id){
+  load(); S.currentId=id;
+  const r=getRound(id);
+  if(!r){ goHome(); return; }
+  document.getElementById('r-title').textContent=r.course;
+  document.getElementById('r-sub').textContent=`${r.players.length} player${r.players.length!==1?'s':''} · ${r.holes} holes`;
+  document.getElementById('r-code').textContent=r.id;
+  document.getElementById('r-date').textContent=fmtDate(r.date);
+  document.getElementById('r-badge').innerHTML=r.status==='live'
+    ?'<span class="badge-live">● LIVE</span>'
+    :'<span class="badge-done">COMPLETE</span>';
+  document.getElementById('r-admin-bar').style.display=S.isAdmin?'block':'none';
+  document.getElementById('btn-finish').style.display=(S.isAdmin&&r.status==='live')?'block':'none';
+  switchTab('sc');
+  showPage('page-round');
+}
+function roundBack(){
+  if(S.isAdmin){ showPage('page-admin'); renderAdmin(); }
+  else goHome();
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+function switchTab(t){
+  ['sc','lb','st'].forEach(id=>{
+    document.getElementById('tab-'+id).classList.toggle('on',id===t);
+    document.getElementById('panel-'+id).classList.toggle('on',id===t);
+  });
+  if(t==='sc') renderScorecard();
+  if(t==='lb') renderLeaderboard();
+  if(t==='st') renderStats();
+}
+
+// ── Scorecard ─────────────────────────────────────────────
+function renderScorecard(){
+  const r=curRound(); if(!r) return;
+  const thead=document.querySelector('#sc-table thead');
+  const tbody=document.querySelector('#sc-table tbody');
+  const totPar=r.pars.reduce((a,b)=>a+b,0);
+  thead.innerHTML=
+    `<tr><th>Player</th>${r.pars.map((_,i)=>`<th>H${i+1}</th>`).join('')}<th>Tot</th><th>+/−</th></tr>`+
+    `<tr><td>Par</td>${r.pars.map(p=>`<td>${p}</td>`).join('')}<td>${totPar}</td><td>—</td></tr>`;
+  tbody.innerHTML=r.players.map((p,pi)=>{
+    let vp=0,tot=0,played=0;
+    const cells=r.pars.map((par,i)=>{
+      const sc=r.scores[p][i];
+      const cls=sc>0?scoreClass(sc,par):'empty-c';
+      if(sc>0){ tot+=sc; played++; vp+=sc-par; }
+      const editable=S.isAdmin&&r.status==='live';
+      const click=editable?`onclick="openModal('${r.id}',${pi},${i})"`:'';
+      return `<td class="score-cell ${editable?'editable':''} ${cls}" ${click}>${sc>0?sc:'·'}</td>`;
+    }).join('');
+    const dStr=played===0?'—':(vp>0?'+'+vp:vp===0?'E':''+vp);
+    const dCls=played===0?'':(vp<0?'green':vp>0?'red':'muted');
+    return `<tr><td>${p}</td>${cells}<td><b>${tot||'—'}</b></td><td class="${dCls}"><b>${dStr}</b></td></tr>`;
+  }).join('');
+}
+
+// ── Score Modal ───────────────────────────────────────────
+function openModal(roundId,pIdx,hole){
+  if(!S.isAdmin) return;
+  const r=getRound(roundId); if(!r||r.status==='complete') return;
+  S.mCtx={roundId,pIdx,hole};
+  const par=r.pars[hole], player=r.players[pIdx];
+  S.mScore=(r.scores[player][hole]>0)?r.scores[player][hole]:par;
+  document.getElementById('m-title').textContent=`Hole ${hole+1}`;
+  document.getElementById('m-meta').textContent=`Par ${par} · ${player}`;
+  const lo=Math.max(1,par-3), hi=par+4;
+  const qEl=document.getElementById('m-quick');
+  qEl.style.gridTemplateColumns=`repeat(${hi-lo+1},1fr)`;
+  qEl.innerHTML=Array.from({length:hi-lo+1},(_,k)=>{
+    const s=lo+k;
+    return `<button class="hbtn ${scoreBtnClass(s,par)}" id="qb-${s}" onclick="quickSet(${s})">${s}<br><span style="font-size:9px">${vpLabel(s-par)}</span></button>`;
+  }).join('');
+  updateModal();
+  document.getElementById('score-modal').classList.add('on');
+}
+function updateModal(){
+  const r=getRound(S.mCtx.roundId), par=r.pars[S.mCtx.hole];
+  document.getElementById('m-score').textContent=S.mScore;
+  const d=S.mScore-par;
+  const lEl=document.getElementById('m-label');
+  lEl.textContent=vpLabel(d);
+  lEl.style.color=d<0?'var(--green)':d>0?'var(--red)':'var(--muted)';
+  document.querySelectorAll('#m-quick .hbtn').forEach(b=>{
+    b.classList.toggle('on',parseInt(b.id.replace('qb-',''))===S.mScore);
+  });
+}
+function quickSet(s){ S.mScore=s; updateModal(); }
+function adj(d){ S.mScore=Math.max(1,S.mScore+d); updateModal(); }
+function saveScore(){
+  const r=getRound(S.mCtx.roundId);
+  r.scores[r.players[S.mCtx.pIdx]][S.mCtx.hole]=S.mScore;
+  save(); closeModal(); renderScorecard();
+}
+function closeModal(){
+  document.getElementById('score-modal').classList.remove('on');
+  S.mCtx=null;
+}
+
+// ── Leaderboard ───────────────────────────────────────────
+function renderLeaderboard(){
+  const r=curRound(); if(!r) return;
+  const data=r.players.map(p=>{
+    const {total,played,vp}=calcTotals(r,p);
+    return {name:p,total,played,vp};
+  }).sort((a,b)=>a.vp-b.vp);
+  document.getElementById('lb-list').innerHTML=data.map((p,i)=>{
+    const vpStr=p.played===0?'—':(p.vp>0?'+'+p.vp:p.vp===0?'E':''+p.vp);
+    const vpCls=p.played===0?'':(p.vp<0?'under':p.vp>0?'over':'even');
+    const rowCls=['gold','silver','bronze'][i]||'';
+    const em=['🥇','🥈','🥉'][i]||'';
+    return `<div class="lbrow ${rowCls}">
+      <div class="lb-rank">${em||'#'+(i+1)}</div>
+      <div class="lb-name">${p.name}</div>
+      <div class="lb-score">
+        <div class="vs-par ${vpCls}">${vpStr}</div>
+        <div style="font-size:11px;color:var(--muted)">${p.total>0?p.total+' strokes':'—'} · ${p.played}/${r.holes}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Stats ─────────────────────────────────────────────────
+function renderStats(){
+  const r=curRound(); if(!r) return;
+  document.getElementById('st-content').innerHTML=r.players.map(p=>{
+    const sc=r.scores[p]||[];
+    let alb=0,eag=0,bir=0,par=0,bog=0,dbl=0,wrs=0;
+    sc.forEach((s,i)=>{
+      if(!s) return;
+      const d=s-r.pars[i];
+      if(d<=-3)alb++; else if(d===-2)eag++; else if(d===-1)bir++;
+      else if(d===0)par++; else if(d===1)bog++; else if(d===2)dbl++;
+      else wrs++;
+    });
+    const tot=sc.reduce((a,b)=>a+(b||0),0);
+    const holesP=sc.filter(s=>s>0).length;
+    let vnum=0; sc.forEach((s,i)=>{ if(s>0) vnum+=s-r.pars[i]; });
+    const vs=holesP>0?(vnum>0?'+'+vnum:vnum===0?'E':''+vnum):'—';
+    return `<div style="margin-bottom:20px">
+      <div class="sec-head">${p}</div>
+      <div class="g4">
+        <div class="sbox"><div class="sl">Alb</div><div class="sv a">${alb}</div></div>
+        <div class="sbox"><div class="sl">Eagle</div><div class="sv a">${eag}</div></div>
+        <div class="sbox"><div class="sl">Birdie</div><div class="sv g">${bir}</div></div>
+        <div class="sbox"><div class="sl">Par</div><div class="sv">${par}</div></div>
+      </div>
+      <div class="g4">
+        <div class="sbox"><div class="sl">Bogey</div><div class="sv r">${bog}</div></div>
+        <div class="sbox"><div class="sl">Double</div><div class="sv r">${dbl}</div></div>
+        <div class="sbox"><div class="sl">Worse</div><div class="sv r">${wrs}</div></div>
+        <div class="sbox"><div class="sl">vs Par</div><div class="sv ${vnum<0?'g':vnum>0?'r':''}">${vs}</div></div>
+      </div>
+      <div class="g3">
+        <div class="sbox"><div class="sl">Total</div><div class="sv">${tot||'—'}</div></div>
+        <div class="sbox"><div class="sl">Holes</div><div class="sv">${holesP}/${r.holes}</div></div>
+        <div class="sbox"><div class="sl">Round Par</div><div class="sv">${r.pars.reduce((a,b)=>a+b,0)}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Finish Round ──────────────────────────────────────────
+function finishRound(){
+  const r=curRound(); if(!r) return;
+  r.status='complete'; save(); openRound(r.id);
+}
+
+// ── Archive ───────────────────────────────────────────────
+function renderArchive(){
+  load();
+  const all=[...S.rounds].reverse();
+  document.getElementById('arc-list').innerHTML=all.length
+    ? all.map(r=>`
+        <div class="${r.status==='live'?'live-round-row':'arc-row'}" onclick="openRound('${r.id}')">
+          <div class="rr-title">${r.course}
+            ${r.status==='live'?'<span style="color:var(--green);font-size:11px;margin-left:6px">● LIVE</span>':''}
+          </div>
+          <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.players.join(', ')}</div>
+          <div class="rr-meta" style="margin-top:2px">Winner: ${winner(r)} · Code: <b>${r.id}</b></div>
+        </div>`).join('')
+    : '<div class="empty-state"><div class="icon">📋</div><p>No competitions yet</p></div>';
+}
+
+// ── Boot ──────────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>
