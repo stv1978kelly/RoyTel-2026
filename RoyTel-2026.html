@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>RoyTel 2026</title>
 <style>
-/* ── Reset ── */
 *{box-sizing:border-box;margin:0;padding:0}
 
 :root{
@@ -44,11 +43,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 input,select{width:100%;padding:11px 12px;border:2px solid var(--blue);border-radius:0;font-size:14px;margin-bottom:10px;background:#fff;color:#111;-webkit-appearance:none;appearance:none}
 input:focus,select:focus{border-color:var(--red);outline:none}
 label{font-size:11px;color:var(--blue);display:block;margin-bottom:4px;margin-top:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-h2{font-size:18px;font-weight:700;color:var(--blue);margin-bottom:12px}
 
 /* ── Messages ── */
 .err{color:var(--red);font-size:13px;padding:10px;background:#fff0f0;border-left:4px solid var(--red);margin-bottom:10px;display:none}
-.ok-msg{font-size:13px;padding:10px;border-left:4px solid var(--green);background:#f0fdf4;color:#166534;margin-bottom:8px}
 
 /* ── Tabs ── */
 .tabs{display:flex;border-bottom:3px solid var(--blue);margin-bottom:14px;overflow-x:auto}
@@ -58,11 +55,11 @@ h2{font-size:18px;font-weight:700;color:var(--blue);margin-bottom:12px}
 .panel{display:none}
 .panel.on{display:block}
 
-/* ── Row helpers ── */
+/* ── Helpers ── */
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
 .sec-head{font-size:11px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:1px;padding:8px 0 6px;border-bottom:2px solid var(--red);margin-bottom:12px}
 
-/* ── Scorecard table ── */
+/* ── Scorecard ── */
 .scwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:8px}
 table{border-collapse:collapse;width:100%;font-size:11px}
 th,td{padding:6px 3px;text-align:center;border-bottom:1px solid var(--border)}
@@ -71,10 +68,11 @@ thead tr:first-child th{background:var(--blue);color:#fff;font-weight:700;border
 thead tr:first-child th:first-child{background:var(--blue)}
 thead tr:nth-child(2) td{background:var(--light);color:var(--blue);font-size:10px;font-weight:700;border-bottom:2px solid var(--red)}
 thead tr:nth-child(2) td:first-child{background:var(--light)}
-.score-cell{cursor:pointer;font-weight:700;min-width:26px;transition:opacity .15s}
-.score-cell:active{opacity:.7}
+.score-cell{font-weight:700;min-width:26px}
+.score-cell.editable{cursor:pointer;transition:opacity .15s}
+.score-cell.editable:active{opacity:.7}
 
-/* Score colour classes */
+/* Score colours */
 .alb{background:#d8b4fe!important;color:#581c87!important}
 .eag{background:#fde68a!important;color:#92400e!important}
 .bir{background:#bbf7d0!important;color:#166534!important}
@@ -134,8 +132,6 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
 .modal-actions{display:flex;gap:8px;margin-bottom:14px}
 .modal-actions .btn{margin-bottom:0;flex:1}
 .quick-row{display:grid;gap:5px;margin-top:4px}
-
-/* Hole quick buttons */
 .hbtn{padding:8px 2px;border:2px solid var(--blue);background:#fff;font-size:12px;font-weight:700;cursor:pointer;text-align:center;color:var(--blue);-webkit-tap-highlight-color:transparent;line-height:1.3}
 .hbtn.on{outline:3px solid var(--blue);outline-offset:-3px}
 .hbtn.alb-b{background:#d8b4fe;border-color:#7c3aed;color:#581c87}
@@ -165,54 +161,72 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
 .par-cell-in select{padding:5px 2px;font-size:12px;text-align:center;margin:0;min-width:0}
 .player-add-row{display:flex;gap:8px;margin-bottom:8px}
 .player-add-row input{margin-bottom:0;flex:1}
-.player-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-left:4px solid var(--blue);border:1px solid var(--border);border-left:4px solid var(--blue);background:#f8f9ff;margin-bottom:5px}
+.player-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--blue);background:#f8f9ff;margin-bottom:5px}
 .player-item span{font-size:14px;font-weight:700;color:var(--blue)}
 .del-btn{background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;padding:0 4px;font-weight:700;line-height:1}
+
+/* ── Admin bar ── */
+.admin-bar{background:var(--red);color:#fff;font-size:11px;font-weight:700;text-align:center;padding:5px;letter-spacing:1px;text-transform:uppercase;margin:0 -16px 14px}
+
+/* ── Join screen ── */
+.join-hero{text-align:center;padding:24px 0 16px}
+.join-hero .icon{font-size:56px;margin-bottom:10px}
+.join-hero h2{font-size:20px;font-weight:900;color:var(--blue);margin-bottom:6px}
+.join-hero p{font-size:13px;color:var(--muted);line-height:1.5}
+#join-code-input{text-transform:uppercase;text-align:center;font-size:28px;letter-spacing:10px;font-weight:900;padding:14px 8px;color:var(--blue)}
+.admin-link{text-align:center;margin-top:28px;padding-top:20px;border-top:1px solid var(--border)}
+.admin-link button{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:8px;text-decoration:underline;-webkit-tap-highlight-color:transparent}
 
 /* ── Misc ── */
 .green{color:var(--green)}.red{color:var(--red)}.muted{color:var(--muted)}
 .empty-state{text-align:center;padding:36px 20px;color:var(--muted)}
 .empty-state .icon{font-size:36px;margin-bottom:10px}
 .empty-state p{font-size:14px}
-.divider{height:1px;background:var(--border);margin:16px 0}
 
 /* ── Bottom Nav ── */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--blue);display:grid;grid-template-columns:repeat(3,1fr);border-top:4px solid var(--red);z-index:100}
-.nav-btn{padding:12px 4px 10px;border:none;background:none;color:#93b4e0;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;flex-direction:column;align-items:center;gap:3px;-webkit-tap-highlight-color:transparent}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--blue);display:grid;border-top:4px solid var(--red);z-index:100}
+.nav-btn{padding:12px 4px 10px;border:none;background:none;color:#93b4e0;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;flex-direction:column;align-items:center;gap:3px;-webkit-tap-highlight-color:transparent;position:relative}
 .nav-btn.on{color:#fff;background:rgba(255,255,255,.1)}
 .nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════ HOME ═════════════════════════════════ -->
+<!-- ══════════════════ JOIN / HOME ══════════════════════ -->
 <div class="page on" id="page-home">
   <div class="topbar">
     <div class="topbar-inner">
       <h1>RoyTel 2026</h1>
-      <p>Golf Scorecard</p>
+      <p>Dalmahoy Golf &amp; Country Club</p>
     </div>
     <div class="stripe"></div>
   </div>
 
-  <div class="sec-head">Live Rounds</div>
-  <div id="home-live"></div>
+  <div class="join-hero">
+    <div class="icon">⛳</div>
+    <h2>Join a Competition</h2>
+    <p>Enter the 6-digit code given to you<br>by the competition organiser</p>
+  </div>
 
-  <div class="sec-head" style="margin-top:16px">Recent Completed</div>
-  <div id="home-recent"></div>
+  <label>Competition Code</label>
+  <input type="text" id="join-code-input" placeholder="A B C 1 2 3"
+    maxlength="6" autocomplete="off" autocorrect="off" spellcheck="false"
+    oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"
+    onkeydown="if(event.key==='Enter')joinRound()"/>
+  <div id="join-err" class="err">Competition code not found. Check with your organiser.</div>
+  <button class="btn btn-dark" onclick="joinRound()">Join Competition</button>
 
-  <div style="margin-top:20px">
-    <button class="btn btn-dark" onclick="showPinPage('new-round')">＋ New Round</button>
-    <button class="btn btn-white" onclick="goArchive()">All Archives</button>
+  <div class="admin-link">
+    <button onclick="showPinPage('admin-login')">Admin Login</button>
   </div>
 </div>
 
-<!-- ═══════════════════════════════ PIN ══════════════════════════════════ -->
+<!-- ══════════════════ PIN ════════════════════════════ -->
 <div class="page" id="page-pin">
   <div class="topbar">
     <div class="topbar-inner">
-      <h1 id="pin-title">Enter PIN</h1>
-      <p id="pin-sub">Admin access required</p>
+      <h1 id="pin-title">Admin Login</h1>
+      <p id="pin-sub">Enter your PIN to continue</p>
     </div>
     <div class="stripe"></div>
   </div>
@@ -240,33 +254,58 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
       <button class="pin-key pin-ok" onclick="psub()">✓</button>
     </div>
     <div style="margin-top:16px">
-      <button class="btn btn-white" onclick="showPage('page-home')">Cancel</button>
+      <button class="btn btn-white" onclick="pinCancel()">Cancel</button>
     </div>
     <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--muted)">Default PIN: 1234</div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════ SETUP ════════════════════════════════ -->
-<div class="page" id="page-setup">
+<!-- ══════════════════ ADMIN DASHBOARD ══════════════════ -->
+<div class="page" id="page-admin">
   <div class="topbar">
     <div class="topbar-inner">
-      <h1>New Round</h1>
-      <p>Set up your scorecard</p>
+      <h1>Admin</h1>
+      <p>Competition Management</p>
     </div>
     <div class="stripe"></div>
   </div>
+  <div class="admin-bar">🔐 Admin Session Active</div>
+
+  <button class="btn btn-green" onclick="initSetup();showPage('page-setup')">＋ Create New Competition</button>
+
+  <div class="sec-head" style="margin-top:4px">Live Competitions</div>
+  <div id="admin-live"></div>
+
+  <div class="sec-head" style="margin-top:16px">Completed</div>
+  <div id="admin-done"></div>
+
+  <div style="margin-top:20px">
+    <button class="btn btn-white" onclick="adminLogout()">Log Out of Admin</button>
+  </div>
+</div>
+
+<!-- ══════════════════ SETUP ════════════════════════════ -->
+<div class="page" id="page-setup">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <h1>New Competition</h1>
+      <p>Set up the scorecard</p>
+    </div>
+    <div class="stripe"></div>
+  </div>
+  <div class="admin-bar">🔐 Admin</div>
 
   <label>Course</label>
   <input type="text" id="s-course" value="Dalmahoy Golf and Country Club" readonly
-    style="background:#f0f4ff;color:var(--blue);font-weight:700;cursor:default"/>
+    style="background:var(--light);color:var(--blue);font-weight:700;cursor:default"/>
 
   <label>Date</label>
   <input type="date" id="s-date"/>
 
   <label>Number of Holes</label>
   <div class="row">
-    <button class="btn-sm on" id="h9" onclick="setHoles(9)">9 Holes</button>
-    <button class="btn-sm" id="h18" onclick="setHoles(18)">18 Holes</button>
+    <button class="btn-sm on" id="h9"  onclick="setHoles(9)">9 Holes</button>
+    <button class="btn-sm"    id="h18" onclick="setHoles(18)">18 Holes</button>
   </div>
 
   <label>Par per Hole</label>
@@ -281,19 +320,20 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
   <div id="s-player-list"></div>
 
   <div id="s-err" class="err"></div>
-  <button class="btn btn-green" onclick="createRound()" style="margin-top:8px">▶ Start Round</button>
-  <button class="btn btn-white" onclick="showPage('page-home')">Cancel</button>
+  <button class="btn btn-green" onclick="createRound()" style="margin-top:8px">▶ Start Competition</button>
+  <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()">Cancel</button>
 </div>
 
-<!-- ═══════════════════════════════ ROUND ════════════════════════════════ -->
+<!-- ══════════════════ ROUND ════════════════════════════ -->
 <div class="page" id="page-round">
   <div class="topbar">
     <div class="topbar-inner">
-      <h1 id="r-title">Round</h1>
+      <h1 id="r-title">Competition</h1>
       <p id="r-sub">Scorecard</p>
     </div>
     <div class="stripe"></div>
   </div>
+  <div id="r-admin-bar" class="admin-bar" style="display:none">🔐 Admin — Tap cells to edit scores</div>
 
   <div class="banner">
     <div>
@@ -304,47 +344,45 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
   </div>
 
   <div class="tabs">
-    <button class="tab on" id="tab-sc"  onclick="switchTab('sc')">Scorecard</button>
-    <button class="tab"    id="tab-lb"  onclick="switchTab('lb')">Leaderboard</button>
-    <button class="tab"    id="tab-st"  onclick="switchTab('st')">Stats</button>
+    <button class="tab on" id="tab-sc" onclick="switchTab('sc')">Scorecard</button>
+    <button class="tab"    id="tab-lb" onclick="switchTab('lb')">Leaderboard</button>
+    <button class="tab"    id="tab-st" onclick="switchTab('st')">Stats</button>
   </div>
 
-  <!-- Scorecard -->
   <div class="panel on" id="panel-sc">
     <div class="scwrap">
       <table id="sc-table"><thead></thead><tbody></tbody></table>
     </div>
     <div style="margin-top:14px">
-      <button class="btn btn-dark" id="btn-finish" onclick="showPinPage('finish')">✓ Complete Round</button>
-      <button class="btn btn-white" onclick="showPage('page-home')">← Back</button>
+      <button class="btn btn-red" id="btn-finish" onclick="showPinPage('finish')" style="display:none">✓ Complete Competition</button>
+      <button class="btn btn-white" id="btn-back" onclick="roundBack()">← Back</button>
     </div>
   </div>
 
-  <!-- Leaderboard -->
   <div class="panel" id="panel-lb">
     <div id="lb-list"></div>
   </div>
 
-  <!-- Stats -->
   <div class="panel" id="panel-st">
     <div id="st-content"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════ ARCHIVE ══════════════════════════════ -->
+<!-- ══════════════════ ARCHIVE ══════════════════════════ -->
 <div class="page" id="page-archive">
   <div class="topbar">
     <div class="topbar-inner">
       <h1>Archives</h1>
-      <p>All rounds</p>
+      <p>All competitions</p>
     </div>
     <div class="stripe"></div>
   </div>
+  <div class="admin-bar">🔐 Admin</div>
   <div id="arc-list"></div>
-  <button class="btn btn-white" onclick="showPage('page-home')" style="margin-top:8px">← Back to Home</button>
+  <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()" style="margin-top:8px">← Back to Admin</button>
 </div>
 
-<!-- ═══════════════════════════════ SCORE MODAL ══════════════════════════ -->
+<!-- ══════════════════ SCORE MODAL ═════════════════════ -->
 <div class="modal-bg" id="score-modal" onclick="if(event.target===this)closeModal()">
   <div class="modal">
     <h3 id="m-title">Hole 1</h3>
@@ -363,180 +401,220 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
   </div>
 </div>
 
-<!-- ═══════════════════════════════ BOTTOM NAV ═══════════════════════════ -->
-<nav class="bottom-nav">
-  <button class="nav-btn on" id="nav-home" onclick="navTo('home')">
+<!-- ══════════════════ BOTTOM NAV ═══════════════════════ -->
+<nav class="bottom-nav" id="bottom-nav" style="grid-template-columns:repeat(2,1fr)">
+  <button class="nav-btn on" id="nav-home" onclick="goHome()">
     <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Home
+    Join
   </button>
-  <button class="nav-btn" id="nav-round" onclick="navTo('round')">
+  <button class="nav-btn" id="nav-round" onclick="goRound()">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
     Scorecard
-  </button>
-  <button class="nav-btn" id="nav-archive" onclick="navTo('archive')">
-    <svg viewBox="0 0 24 24"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
-    Archive
   </button>
 </nav>
 
 <script>
-// ╔══════════════════════════════════════════════════════╗
-// ║           ROYTEL 2026 — GOLF SCORECARD APP           ║
-// ╚══════════════════════════════════════════════════════╝
+// ╔══════════════════════════════════════════════════════════╗
+// ║  ROYTEL 2026 — GOLF SCORECARD                           ║
+// ║  Players join via code · Admin has full PIN access      ║
+// ╚══════════════════════════════════════════════════════════╝
 
-const SK  = 'roytel2026_rounds';
-const PK  = 'roytel2026_pin';
+const SK      = 'roytel2026_rounds';
+const PK      = 'roytel2026_pin';
 const DEF_PIN = '1234';
 
 const S = {
-  rounds: [],
+  rounds:    [],
   currentId: null,
-  pinBuf: '',
+  isAdmin:   false,
+  pinBuf:    '',
   pinAction: null,
-  holes: 9,
-  players: [],
-  pars: [],
-  mScore: 0,
-  mCtx: null  // { roundId, pIdx, hole }
+  holes:     9,
+  players:   [],
+  mScore:    0,
+  mCtx:      null
 };
 
-// ── Persistence ──────────────────────────────────────
-function load()  { try { S.rounds = JSON.parse(localStorage.getItem(SK)) || []; } catch(e){ S.rounds=[]; } }
-function save()  { localStorage.setItem(SK, JSON.stringify(S.rounds)); }
-function getPin(){ return localStorage.getItem(PK) || DEF_PIN; }
+// ── Storage ──────────────────────────────────────────────
+function load()   { try{ S.rounds=JSON.parse(localStorage.getItem(SK))||[]; }catch(e){ S.rounds=[]; } }
+function save()   { localStorage.setItem(SK, JSON.stringify(S.rounds)); }
+function getPin() { return localStorage.getItem(PK)||DEF_PIN; }
 function getRound(id){ return S.rounds.find(r=>r.id===id); }
-function currentRound(){ return getRound(S.currentId); }
+function curRound()  { return getRound(S.currentId); }
 
-// ── Utilities ─────────────────────────────────────────
+// ── Utilities ─────────────────────────────────────────────
 function genId(){
   const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
 }
 function fmtDate(d){
   if(!d) return '';
-  const dt=new Date(d+'T12:00:00');
-  return dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  return new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
 }
-function vp(score,par){ return (score>0&&par>0)?score-par:null; }
-function vpLabel(diff){
-  if(diff===null) return '';
-  const m={'-3':'Albatross','-2':'Eagle','-1':'Birdie','0':'Par','1':'Bogey','2':'Double','3':'Triple'};
-  return m[diff]||(diff>0?'+'+diff:''+diff);
+function vpLabel(d){
+  const m={'-4':'Condor','-3':'Albatross','-2':'Eagle','-1':'Birdie','0':'Par','1':'Bogey','2':'Double','3':'Triple'};
+  return m[String(d)]||(d>0?'+'+d:''+d);
 }
 function scoreClass(s,par){
   if(!s||!par) return '';
   const d=s-par;
-  if(d<=-3) return 'alb'; if(d===-2) return 'eag'; if(d===-1) return 'bir';
-  if(d===0)  return 'par-c'; if(d===1) return 'bog'; if(d===2) return 'dbl';
-  return 'tri';
+  if(d<=-3)return'alb'; if(d===-2)return'eag'; if(d===-1)return'bir';
+  if(d===0) return'par-c'; if(d===1)return'bog'; if(d===2)return'dbl';
+  return'tri';
 }
 function scoreBtnClass(s,par){
   if(!s||!par) return '';
   const d=s-par;
-  if(d<=-3) return 'alb-b'; if(d===-2) return 'eag-b'; if(d===-1) return 'bir-b';
-  if(d===0)  return 'par-b'; if(d===1)  return 'bog-b'; if(d===2)  return 'dbl-b';
-  return 'tri-b';
+  if(d<=-3)return'alb-b'; if(d===-2)return'eag-b'; if(d===-1)return'bir-b';
+  if(d===0) return'par-b'; if(d===1) return'bog-b'; if(d===2) return'dbl-b';
+  return'tri-b';
 }
-function totalScores(round, player){
-  const sc = round.scores[player] || [];
-  const played = sc.filter(s=>s>0);
-  const total = played.reduce((a,b)=>a+b, 0);
-  let parSoFar=0, vpNum=0;
-  sc.forEach((s,i)=>{ if(s>0){ parSoFar+=round.pars[i]; vpNum+=s-round.pars[i]; }});
-  return { total, played: played.length, vp: played.length>0?vpNum:9999, parSoFar };
+function calcTotals(round,player){
+  const sc=round.scores[player]||[];
+  let total=0,played=0,vpNum=0;
+  sc.forEach((s,i)=>{ if(s>0){ total+=s; played++; vpNum+=s-round.pars[i]; }});
+  return {total,played,vp:played>0?vpNum:9999};
 }
 function winner(round){
   if(!round.players.length) return '—';
-  let best=null, bp='';
+  let best=null,bp='';
   round.players.forEach(p=>{
-    const { vp } = totalScores(round,p);
-    if(best===null||vp<best){ best=vp; bp=p; }
+    const {vp}=calcTotals(round,p);
+    if(best===null||vp<best){best=vp;bp=p;}
   });
   return bp||'—';
 }
 
-// ── Navigation ────────────────────────────────────────
+// ── Navigation ────────────────────────────────────────────
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   const el=document.getElementById(id);
   if(el){ el.classList.add('on'); window.scrollTo(0,0); }
-  // Nav highlight
-  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
-  const map={'page-home':'nav-home','page-round':'nav-round','page-archive':'nav-archive'};
-  if(map[id]) document.getElementById(map[id])?.classList.add('on');
+  refreshNav(id);
 }
-function navTo(k){
-  if(k==='home'){ showPage('page-home'); renderHome(); }
-  else if(k==='round'){
-    if(S.currentId){ showPage('page-round'); switchTab('sc'); }
-    else{ showPage('page-home'); renderHome(); }
+
+function refreshNav(pageId){
+  const nav=document.getElementById('bottom-nav');
+  // Manage admin nav button
+  let adminBtn=document.getElementById('nav-admin');
+  if(S.isAdmin && !adminBtn){
+    adminBtn=document.createElement('button');
+    adminBtn.id='nav-admin';
+    adminBtn.className='nav-btn';
+    adminBtn.innerHTML=`<svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Admin`;
+    adminBtn.onclick=()=>{ showPage('page-admin'); renderAdmin(); };
+    nav.appendChild(adminBtn);
+  } else if(!S.isAdmin && adminBtn){
+    adminBtn.remove();
   }
-  else if(k==='archive'){ goArchive(); }
+  // Columns
+  const cols=S.isAdmin?3:2;
+  nav.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  // Active states
+  ['nav-home','nav-round','nav-admin'].forEach(id=>{
+    const b=document.getElementById(id); if(b)b.classList.remove('on');
+  });
+  const map={'page-home':'nav-home','page-round':'nav-round',
+             'page-admin':'nav-admin','page-archive':'nav-admin','page-setup':'nav-admin'};
+  const active=map[pageId];
+  if(active){ const b=document.getElementById(active); if(b)b.classList.add('on'); }
 }
-function goArchive(){ showPage('page-archive'); renderArchive(); }
 
-// ── Home ──────────────────────────────────────────────
-function renderHome(){
+// ── Home / Join ───────────────────────────────────────────
+function goHome(){
+  const inp=document.getElementById('join-code-input');
+  if(inp) inp.value='';
+  document.getElementById('join-err').style.display='none';
+  showPage('page-home');
+}
+function goRound(){
+  if(S.currentId) openRound(S.currentId);
+  else goHome();
+}
+function joinRound(){
+  const code=document.getElementById('join-code-input').value.trim().toUpperCase();
+  const errEl=document.getElementById('join-err');
+  errEl.style.display='none';
+  if(code.length<6){ errEl.textContent='Please enter a valid 6-character code.'; errEl.style.display='block'; return; }
   load();
-  const live = S.rounds.filter(r=>r.status==='live');
-  const done = S.rounds.filter(r=>r.status==='complete').slice(-4).reverse();
-
-  const lEl = document.getElementById('home-live');
-  lEl.innerHTML = live.length
-    ? live.map(r=>`
-        <div class="live-round-row" onclick="openRound('${r.id}')">
-          <div class="rr-title">${r.course}</div>
-          <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.players.length} player${r.players.length!==1?'s':''}</div>
-        </div>`).join('')
-    : '<div class="empty-state"><div class="icon">⛳</div><p>No live rounds — start one below</p></div>';
-
-  const rEl = document.getElementById('home-recent');
-  rEl.innerHTML = done.length
-    ? done.map(r=>`
-        <div class="arc-row" onclick="openRound('${r.id}')">
-          <div class="rr-title">${r.course}</div>
-          <div class="rr-meta">${fmtDate(r.date)} · Winner: ${winner(r)}</div>
-        </div>`).join('')
-    : '<div style="color:var(--muted);font-size:13px;padding:8px 0">No completed rounds yet</div>';
+  const r=S.rounds.find(r=>r.id===code);
+  if(!r){ errEl.textContent='Competition code not found. Check with your organiser.'; errEl.style.display='block'; return; }
+  openRound(r.id);
 }
 
-// ── PIN ───────────────────────────────────────────────
+// ── PIN ───────────────────────────────────────────────────
 function showPinPage(action){
   S.pinAction=action; S.pinBuf='';
   renderPinDots();
   document.getElementById('pin-err').style.display='none';
   const titles={
-    'new-round':  ['New Round','Enter admin PIN to continue'],
-    'finish':     ['Complete Round','Enter PIN to finalise'],
-    'change-pin': ['Change PIN','Enter current PIN'],
+    'admin-login':['Admin Login',   'Enter your PIN to continue'],
+    'finish':     ['Complete Round','Enter PIN to finalise the competition'],
   };
-  const t=titles[action]||['Enter PIN','Admin access'];
+  const t=titles[action]||['Enter PIN','Admin access required'];
   document.getElementById('pin-title').textContent=t[0];
   document.getElementById('pin-sub').textContent=t[1];
   showPage('page-pin');
 }
 function renderPinDots(){
   for(let i=0;i<4;i++)
-    document.getElementById('pd'+i).classList.toggle('filled', i<S.pinBuf.length);
+    document.getElementById('pd'+i).classList.toggle('filled',i<S.pinBuf.length);
 }
-function pk(k){ if(S.pinBuf.length>=4)return; S.pinBuf+=k; renderPinDots(); if(S.pinBuf.length===4) setTimeout(psub,200); }
+function pk(k){ if(S.pinBuf.length>=4)return; S.pinBuf+=k; renderPinDots(); if(S.pinBuf.length===4)setTimeout(psub,200); }
 function pclr(){ S.pinBuf=S.pinBuf.slice(0,-1); renderPinDots(); document.getElementById('pin-err').style.display='none'; }
 function psub(){
   if(S.pinBuf.length<4) return;
   if(S.pinBuf===getPin()){
     const a=S.pinAction; S.pinBuf='';
-    if(a==='new-round')  { initSetup(); showPage('page-setup'); }
+    if(a==='admin-login'){ S.isAdmin=true; showPage('page-admin'); renderAdmin(); }
     if(a==='finish')     { finishRound(); }
   } else {
     document.getElementById('pin-err').style.display='block';
     S.pinBuf=''; renderPinDots();
   }
 }
+function pinCancel(){
+  // Return to appropriate page
+  if(S.pinAction==='finish') openRound(S.currentId);
+  else goHome();
+}
+function adminLogout(){
+  S.isAdmin=false;
+  goHome();
+}
 
-// ── Setup ─────────────────────────────────────────────
+// ── Admin Dashboard ───────────────────────────────────────
+function renderAdmin(){
+  load();
+  const live=S.rounds.filter(r=>r.status==='live');
+  const done=S.rounds.filter(r=>r.status==='complete').slice().reverse();
+
+  document.getElementById('admin-live').innerHTML=live.length
+    ? live.map(r=>`
+        <div class="live-round-row" onclick="openRound('${r.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="rr-title">${r.course}</div>
+            <span style="font-family:monospace;font-weight:900;font-size:15px;color:var(--blue);letter-spacing:3px">${r.id}</span>
+          </div>
+          <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.players.length} player${r.players.length!==1?'s':''}</div>
+        </div>`).join('')
+    : '<div style="color:var(--muted);font-size:13px;padding:10px 0">No live competitions</div>';
+
+  const doneHTML=done.slice(0,6).map(r=>`
+    <div class="arc-row" onclick="openRound('${r.id}')">
+      <div class="rr-title">${r.course}</div>
+      <div class="rr-meta">${fmtDate(r.date)} · Winner: ${winner(r)} · Code: <b>${r.id}</b></div>
+    </div>`).join('');
+  const viewAll=done.length>6
+    ?`<button class="btn btn-white" style="margin-top:4px" onclick="showPage('page-archive');renderArchive()">View All Archives (${done.length})</button>`:'';
+  document.getElementById('admin-done').innerHTML=done.length
+    ? doneHTML+viewAll
+    : '<div style="color:var(--muted);font-size:13px;padding:10px 0">No completed competitions yet</div>';
+}
+
+// ── Setup ─────────────────────────────────────────────────
 function initSetup(){
   S.holes=9; S.players=[];
-  // course is fixed — no need to reset
   document.getElementById('s-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('h9').classList.add('on');
   document.getElementById('h18').classList.remove('on');
@@ -583,8 +661,7 @@ function createRound(){
   const date=document.getElementById('s-date').value;
   const err=document.getElementById('s-err');
   err.style.display='none';
-  if(!course){ err.textContent='Course name missing.'; err.style.display='block'; return; }
-  if(!date)  { err.textContent='Select a date.'; err.style.display='block'; return; }
+  if(!date)         { err.textContent='Please select a date.'; err.style.display='block'; return; }
   if(!S.players.length){ err.textContent='Add at least one player.'; err.style.display='block'; return; }
   const pars=Array.from({length:S.holes},(_,i)=>parseInt(document.getElementById('p-h'+i).value)||4);
   const scores={};
@@ -594,11 +671,11 @@ function createRound(){
   openRound(round.id);
 }
 
-// ── Round Page ────────────────────────────────────────
+// ── Open Round ────────────────────────────────────────────
 function openRound(id){
   load(); S.currentId=id;
   const r=getRound(id);
-  if(!r){ showPage('page-home'); renderHome(); return; }
+  if(!r){ goHome(); return; }
   document.getElementById('r-title').textContent=r.course;
   document.getElementById('r-sub').textContent=`${r.players.length} player${r.players.length!==1?'s':''} · ${r.holes} holes`;
   document.getElementById('r-code').textContent=r.id;
@@ -606,10 +683,17 @@ function openRound(id){
   document.getElementById('r-badge').innerHTML=r.status==='live'
     ?'<span class="badge-live">● LIVE</span>'
     :'<span class="badge-done">COMPLETE</span>';
-  document.getElementById('btn-finish').style.display=r.status==='live'?'block':'none';
+  document.getElementById('r-admin-bar').style.display=S.isAdmin?'block':'none';
+  document.getElementById('btn-finish').style.display=(S.isAdmin&&r.status==='live')?'block':'none';
   switchTab('sc');
   showPage('page-round');
 }
+function roundBack(){
+  if(S.isAdmin){ showPage('page-admin'); renderAdmin(); }
+  else goHome();
+}
+
+// ── Tabs ──────────────────────────────────────────────────
 function switchTab(t){
   ['sc','lb','st'].forEach(id=>{
     document.getElementById('tab-'+id).classList.toggle('on',id===t);
@@ -620,54 +704,46 @@ function switchTab(t){
   if(t==='st') renderStats();
 }
 
-// ── Scorecard ─────────────────────────────────────────
+// ── Scorecard ─────────────────────────────────────────────
 function renderScorecard(){
-  const r=currentRound(); if(!r) return;
+  const r=curRound(); if(!r) return;
   const thead=document.querySelector('#sc-table thead');
   const tbody=document.querySelector('#sc-table tbody');
-  const totalPar=r.pars.reduce((a,b)=>a+b,0);
-
-  // Build header
-  let h1=`<tr><th>Player</th>${r.pars.map((_,i)=>`<th>H${i+1}</th>`).join('')}<th>Tot</th><th>+/−</th></tr>`;
-  let h2=`<tr><td>Par</td>${r.pars.map(p=>`<td>${p}</td>`).join('')}<td>${totalPar}</td><td>—</td></tr>`;
-  thead.innerHTML=h1+h2;
-
-  // Build body
+  const totPar=r.pars.reduce((a,b)=>a+b,0);
+  thead.innerHTML=
+    `<tr><th>Player</th>${r.pars.map((_,i)=>`<th>H${i+1}</th>`).join('')}<th>Tot</th><th>+/−</th></tr>`+
+    `<tr><td>Par</td>${r.pars.map(p=>`<td>${p}</td>`).join('')}<td>${totPar}</td><td>—</td></tr>`;
   tbody.innerHTML=r.players.map((p,pi)=>{
-    let vpNum=0, total=0, played=0;
+    let vp=0,tot=0,played=0;
     const cells=r.pars.map((par,i)=>{
       const sc=r.scores[p][i];
       const cls=sc>0?scoreClass(sc,par):'empty-c';
-      const disp=sc>0?sc:'·';
-      if(sc>0){ total+=sc; played++; vpNum+=sc-par; }
-      const clickable=r.status==='live'?`onclick="openModal('${r.id}',${pi},${i})"`:'';
-      return `<td class="score-cell ${cls}" ${clickable}>${disp}</td>`;
+      if(sc>0){ tot+=sc; played++; vp+=sc-par; }
+      const editable=S.isAdmin&&r.status==='live';
+      const click=editable?`onclick="openModal('${r.id}',${pi},${i})"`:'';
+      return `<td class="score-cell ${editable?'editable':''} ${cls}" ${click}>${sc>0?sc:'·'}</td>`;
     }).join('');
-    const diffStr=played===0?'—':(vpNum>0?'+'+vpNum:vpNum===0?'E':''+vpNum);
-    const diffCls=played===0?'':(vpNum<0?'green':vpNum>0?'red':'muted');
-    return `<tr><td>${p}</td>${cells}<td><b>${total||'—'}</b></td><td class="${diffCls}"><b>${diffStr}</b></td></tr>`;
+    const dStr=played===0?'—':(vp>0?'+'+vp:vp===0?'E':''+vp);
+    const dCls=played===0?'':(vp<0?'green':vp>0?'red':'muted');
+    return `<tr><td>${p}</td>${cells}<td><b>${tot||'—'}</b></td><td class="${dCls}"><b>${dStr}</b></td></tr>`;
   }).join('');
 }
 
-// ── Score Modal ───────────────────────────────────────
+// ── Score Modal ───────────────────────────────────────────
 function openModal(roundId,pIdx,hole){
+  if(!S.isAdmin) return;
   const r=getRound(roundId); if(!r||r.status==='complete') return;
   S.mCtx={roundId,pIdx,hole};
   const par=r.pars[hole], player=r.players[pIdx];
-  const existing=r.scores[player][hole];
-  S.mScore=existing>0?existing:par;
+  S.mScore=(r.scores[player][hole]>0)?r.scores[player][hole]:par;
   document.getElementById('m-title').textContent=`Hole ${hole+1}`;
   document.getElementById('m-meta').textContent=`Par ${par} · ${player}`;
-  // Quick score buttons: par-3 to par+4
   const lo=Math.max(1,par-3), hi=par+4;
-  const cols=hi-lo+1;
   const qEl=document.getElementById('m-quick');
-  qEl.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  qEl.style.gridTemplateColumns=`repeat(${hi-lo+1},1fr)`;
   qEl.innerHTML=Array.from({length:hi-lo+1},(_,k)=>{
-    const s=lo+k, d=s-par;
-    const lbl=vpLabel(d);
-    const cls=scoreBtnClass(s,par);
-    return `<button class="hbtn ${cls}" id="qb-${s}" onclick="quickSet(${s})">${s}<br><span style="font-size:9px">${lbl}</span></button>`;
+    const s=lo+k;
+    return `<button class="hbtn ${scoreBtnClass(s,par)}" id="qb-${s}" onclick="quickSet(${s})">${s}<br><span style="font-size:9px">${vpLabel(s-par)}</span></button>`;
   }).join('');
   updateModal();
   document.getElementById('score-modal').classList.add('on');
@@ -676,12 +752,11 @@ function updateModal(){
   const r=getRound(S.mCtx.roundId), par=r.pars[S.mCtx.hole];
   document.getElementById('m-score').textContent=S.mScore;
   const d=S.mScore-par;
-  const lbl=vpLabel(d);
   const lEl=document.getElementById('m-label');
-  lEl.textContent=lbl;
+  lEl.textContent=vpLabel(d);
   lEl.style.color=d<0?'var(--green)':d>0?'var(--red)':'var(--muted)';
   document.querySelectorAll('#m-quick .hbtn').forEach(b=>{
-    b.classList.toggle('on', parseInt(b.id.replace('qb-',''))===S.mScore);
+    b.classList.toggle('on',parseInt(b.id.replace('qb-',''))===S.mScore);
   });
 }
 function quickSet(s){ S.mScore=s; updateModal(); }
@@ -696,19 +771,18 @@ function closeModal(){
   S.mCtx=null;
 }
 
-// ── Leaderboard ───────────────────────────────────────
+// ── Leaderboard ───────────────────────────────────────────
 function renderLeaderboard(){
-  const r=currentRound(); if(!r) return;
+  const r=curRound(); if(!r) return;
   const data=r.players.map(p=>{
-    const {total,played,vp:v}=totalScores(r,p);
-    return {name:p,total,played,vp:v};
+    const {total,played,vp}=calcTotals(r,p);
+    return {name:p,total,played,vp};
   }).sort((a,b)=>a.vp-b.vp);
-  const medals=['gold','silver','bronze'];
   document.getElementById('lb-list').innerHTML=data.map((p,i)=>{
     const vpStr=p.played===0?'—':(p.vp>0?'+'+p.vp:p.vp===0?'E':''+p.vp);
     const vpCls=p.played===0?'':(p.vp<0?'under':p.vp>0?'over':'even');
-    const rowCls=medals[i]||'';
-    const em=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    const rowCls=['gold','silver','bronze'][i]||'';
+    const em=['🥇','🥈','🥉'][i]||'';
     return `<div class="lbrow ${rowCls}">
       <div class="lb-rank">${em||'#'+(i+1)}</div>
       <div class="lb-name">${p.name}</div>
@@ -720,9 +794,9 @@ function renderLeaderboard(){
   }).join('');
 }
 
-// ── Stats ─────────────────────────────────────────────
+// ── Stats ─────────────────────────────────────────────────
 function renderStats(){
-  const r=currentRound(); if(!r) return;
+  const r=curRound(); if(!r) return;
   document.getElementById('st-content').innerHTML=r.players.map(p=>{
     const sc=r.scores[p]||[];
     let alb=0,eag=0,bir=0,par=0,bog=0,dbl=0,wrs=0;
@@ -734,41 +808,39 @@ function renderStats(){
       else wrs++;
     });
     const tot=sc.reduce((a,b)=>a+(b||0),0);
-    const totPar=r.pars.reduce((a,b)=>a+b,0);
     const holesP=sc.filter(s=>s>0).length;
-    let vnum=0; sc.forEach((s,i)=>{if(s>0)vnum+=s-r.pars[i];});
+    let vnum=0; sc.forEach((s,i)=>{ if(s>0) vnum+=s-r.pars[i]; });
     const vs=holesP>0?(vnum>0?'+'+vnum:vnum===0?'E':''+vnum):'—';
-    return `
-      <div style="margin-bottom:20px">
-        <div class="sec-head">${p}</div>
-        <div class="g4">
-          <div class="sbox"><div class="sl">Albatross</div><div class="sv a">${alb}</div></div>
-          <div class="sbox"><div class="sl">Eagle</div><div class="sv a">${eag}</div></div>
-          <div class="sbox"><div class="sl">Birdie</div><div class="sv g">${bir}</div></div>
-          <div class="sbox"><div class="sl">Par</div><div class="sv">${par}</div></div>
-        </div>
-        <div class="g4">
-          <div class="sbox"><div class="sl">Bogey</div><div class="sv r">${bog}</div></div>
-          <div class="sbox"><div class="sl">Double</div><div class="sv r">${dbl}</div></div>
-          <div class="sbox"><div class="sl">Worse</div><div class="sv r">${wrs}</div></div>
-          <div class="sbox"><div class="sl">vs Par</div><div class="sv ${vnum<0?'g':vnum>0?'r':''}">${vs}</div></div>
-        </div>
-        <div class="g3">
-          <div class="sbox"><div class="sl">Total</div><div class="sv">${tot||'—'}</div></div>
-          <div class="sbox"><div class="sl">Holes</div><div class="sv">${holesP}/${r.holes}</div></div>
-          <div class="sbox"><div class="sl">Round Par</div><div class="sv">${totPar}</div></div>
-        </div>
-      </div>`;
+    return `<div style="margin-bottom:20px">
+      <div class="sec-head">${p}</div>
+      <div class="g4">
+        <div class="sbox"><div class="sl">Alb</div><div class="sv a">${alb}</div></div>
+        <div class="sbox"><div class="sl">Eagle</div><div class="sv a">${eag}</div></div>
+        <div class="sbox"><div class="sl">Birdie</div><div class="sv g">${bir}</div></div>
+        <div class="sbox"><div class="sl">Par</div><div class="sv">${par}</div></div>
+      </div>
+      <div class="g4">
+        <div class="sbox"><div class="sl">Bogey</div><div class="sv r">${bog}</div></div>
+        <div class="sbox"><div class="sl">Double</div><div class="sv r">${dbl}</div></div>
+        <div class="sbox"><div class="sl">Worse</div><div class="sv r">${wrs}</div></div>
+        <div class="sbox"><div class="sl">vs Par</div><div class="sv ${vnum<0?'g':vnum>0?'r':''}">${vs}</div></div>
+      </div>
+      <div class="g3">
+        <div class="sbox"><div class="sl">Total</div><div class="sv">${tot||'—'}</div></div>
+        <div class="sbox"><div class="sl">Holes</div><div class="sv">${holesP}/${r.holes}</div></div>
+        <div class="sbox"><div class="sl">Round Par</div><div class="sv">${r.pars.reduce((a,b)=>a+b,0)}</div></div>
+      </div>
+    </div>`;
   }).join('');
 }
 
-// ── Finish Round ──────────────────────────────────────
+// ── Finish Round ──────────────────────────────────────────
 function finishRound(){
-  const r=currentRound(); if(!r) return;
+  const r=curRound(); if(!r) return;
   r.status='complete'; save(); openRound(r.id);
 }
 
-// ── Archive ───────────────────────────────────────────
+// ── Archive ───────────────────────────────────────────────
 function renderArchive(){
   load();
   const all=[...S.rounds].reverse();
@@ -779,14 +851,13 @@ function renderArchive(){
             ${r.status==='live'?'<span style="color:var(--green);font-size:11px;margin-left:6px">● LIVE</span>':''}
           </div>
           <div class="rr-meta">${fmtDate(r.date)} · ${r.holes} holes · ${r.players.join(', ')}</div>
-          <div class="rr-meta" style="margin-top:2px">Winner: ${winner(r)} · Code: ${r.id}</div>
+          <div class="rr-meta" style="margin-top:2px">Winner: ${winner(r)} · Code: <b>${r.id}</b></div>
         </div>`).join('')
-    : '<div class="empty-state"><div class="icon">📋</div><p>No rounds yet</p></div>';
+    : '<div class="empty-state"><div class="icon">📋</div><p>No competitions yet</p></div>';
 }
 
-// ── Boot ──────────────────────────────────────────────
+// ── Boot ──────────────────────────────────────────────────
 load();
-renderHome();
 </script>
 </body>
 </html>
