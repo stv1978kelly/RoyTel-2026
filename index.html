@@ -932,6 +932,11 @@ function buildPlayerRow(r,p,isStab){
   const pi=r.players.indexOf(p);
   const hcp=r.handicaps?.[p]??0;
   const isMe=!S.isAdmin&&S.currentPlayer===p;
+  // Find if currentPlayer is in the same group as this player
+  const groups=r.groups||[];
+  const myGroup=groups.find(g=>g.players.includes(S.currentPlayer));
+  const sameGroup=!!myGroup&&myGroup.players.includes(p);
+  const canEdit=S.isAdmin||(S.currentPlayer&&r.status==='live'&&(isMe||sameGroup));
   let vp=0,gross=0,played=0,totalPts=0;
   const cells=r.pars.map((par,i)=>{
     const sc=r.scores[p][i];
@@ -940,7 +945,7 @@ function buildPlayerRow(r,p,isStab){
     if(sc>0){gross+=sc;played++;vp+=sc-par;}
     const pts=sc>0?stablefordPts(sc,par,hcp,si,r.holes):null;
     if(pts!==null)totalPts+=pts;
-    const editable=(S.isAdmin||isMe)&&r.status==='live';
+    const editable=canEdit;
     const click=editable?`onclick="openModal('${r.id}',${pi},${i})"` :'';
     const display=sc>0?(isStab?`<span title="Gross:${sc}">${pts}</span>`:sc):'·';
     const cellCls=isStab&&sc>0?ptsClass(pts):cls;
