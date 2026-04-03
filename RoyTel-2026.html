@@ -256,8 +256,9 @@ thead tr:nth-child(2) td:first-child{background:var(--light)}
     <div class="stripe"></div>
   </div>
 
-  <label>Course / Round Name</label>
-  <input type="text" id="s-course" placeholder="e.g. St Andrews — Old Course" maxlength="50"/>
+  <label>Course</label>
+  <input type="text" id="s-course" value="Dalmahoy Golf and Country Club" readonly
+    style="background:#f0f4ff;color:var(--blue);font-weight:700;cursor:default"/>
 
   <label>Date</label>
   <input type="date" id="s-date"/>
@@ -535,7 +536,7 @@ function psub(){
 // ── Setup ─────────────────────────────────────────────
 function initSetup(){
   S.holes=9; S.players=[];
-  document.getElementById('s-course').value='';
+  // course is fixed — no need to reset
   document.getElementById('s-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('h9').classList.add('on');
   document.getElementById('h18').classList.remove('on');
@@ -582,7 +583,7 @@ function createRound(){
   const date=document.getElementById('s-date').value;
   const err=document.getElementById('s-err');
   err.style.display='none';
-  if(!course){ err.textContent='Enter a course/round name.'; err.style.display='block'; return; }
+  if(!course){ err.textContent='Course name missing.'; err.style.display='block'; return; }
   if(!date)  { err.textContent='Select a date.'; err.style.display='block'; return; }
   if(!S.players.length){ err.textContent='Add at least one player.'; err.style.display='block'; return; }
   const pars=Array.from({length:S.holes},(_,i)=>parseInt(document.getElementById('p-h'+i).value)||4);
