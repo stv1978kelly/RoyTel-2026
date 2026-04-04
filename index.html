@@ -1447,20 +1447,25 @@ function renderLeaderboard(){
   if(isScramble){
     const groups=r.groups||[];
     const ss=r.scrambleScores||{};
+    const totPar=r.pars.reduce((a,b)=>a+b,0);
     const data=groups.map((g,gi)=>{
       const scores=ss[gi]||[];
       const played=scores.filter(s=>s>0).length;
-      const tot=scores.reduce((a,b)=>a+(b||0),0);
-      let vp=0;scores.forEach((s,i)=>{if(s>0)vp+=s-r.pars[i];});
-      // Team handicap: lowest HCP×25% + 2nd×20% + 3rd×15% + 4th×10%
+      const gross=scores.reduce((a,b)=>a+(b||0),0);
+      let grossVp=0;scores.forEach((s,i)=>{if(s>0)grossVp+=s-r.pars[i];});
       const teamHcp=scrambleTeamHcp(g,r.handicaps);
-      const net=tot>0?tot-teamHcp:0;
-      return{gi,g,played,tot,vp,net,teamHcp,sk:played>0?vp:9999};
+      // Net score = gross minus team handicap; net vs par = net - par for holes played
+      const net=gross>0?gross-teamHcp:0;
+      const parSoFar=r.pars.slice(0,played).reduce((a,b)=>a+b,0)||0;
+      // For ranking: use net vs full course par (consistent comparison)
+      const netVp=gross>0?(net-totPar):9999;
+      return{gi,g,played,gross,grossVp,net,netVp,teamHcp,sk:played>0?netVp:9999};
     }).sort((a,b)=>a.sk-b.sk);
     const medals=['gold','silver','bronze'];
     el.innerHTML=data.map((t,i)=>{
-      const vpStr=t.played===0?'—':(t.vp>0?'+'+t.vp:t.vp===0?'E':''+t.vp);
-      const vpCls=t.played===0?'':(t.vp<0?'under':t.vp>0?'over':'even');
+      const netStr=t.played===0?'—':(t.netVp>0?'+'+t.netVp:t.netVp===0?'E':''+t.netVp);
+      const netCls=t.played===0?'':(t.netVp<0?'under':t.netVp>0?'over':'even');
+      const grossStr=t.played===0?'—':(t.grossVp>0?'+'+t.grossVp:t.grossVp===0?'E':''+t.grossVp);
       const teeStr=t.g.teeTime?` · ${t.g.teeTime}`:'';
       const em=['🥇','🥈','🥉'][i]||'';
       return`<div class="lbrow ${medals[i]||''}">
@@ -1468,9 +1473,12 @@ function renderLeaderboard(){
         <div style="flex:1">
           <div class="lb-name">🤝 Group ${t.gi+1}${teeStr}</div>
           <div class="lb-sub">${t.g.players.join(', ')}</div>
-          <div class="lb-sub">Team HCP ${t.teamHcp} · ${t.tot>0?t.tot+' gross':'—'} · ${t.played}/${r.holes} holes</div>
+          <div class="lb-sub">Gross ${t.gross||'—'} (${grossStr}) · HCP ${t.teamHcp} · Net ${t.net||'—'} · ${t.played}/${r.holes}</div>
         </div>
-        <div class="lb-score"><div class="vs-par ${vpCls}">${vpStr}</div></div>
+        <div class="lb-score">
+          <div class="vs-par ${netCls}">${netStr}</div>
+          <div style="font-size:11px;color:var(--muted)">net</div>
+        </div>
       </div>`;
     }).join('');
     return;
