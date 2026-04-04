@@ -564,9 +564,20 @@ const S={
 
 // ── Storage ──────────────────────────────────────────────
 const PL_KEY='roytel2026_players';
+// Firebase converts JS arrays to objects with numeric keys — convert back
+function toArr(val,len,def=null){
+  if(Array.isArray(val))return val;
+  if(val&&typeof val==='object'){
+    const a=new Array(len).fill(def);
+    Object.keys(val).forEach(k=>{const i=parseInt(k);if(!isNaN(i)&&i<len)a[i]=val[k];});
+    return a;
+  }
+  return new Array(len).fill(def);
+}
+
 function load(){
   try{S.rounds=JSON.parse(localStorage.getItem(SK))||[];}catch(e){S.rounds=[];}
-  S.rounds=S.rounds.filter(r=>r&&r.id&&r.date); // discard corrupt entries
+  S.rounds=S.rounds.filter(r=>r&&r.id&&r.date);
   S.rounds.forEach(r=>{
     try{
       if(!r.players)   r.players=[];
@@ -580,11 +591,16 @@ function load(){
       if(!r.minDrives) r.minDrives=2;
       if(!r.scrambleScores)r.scrambleScores={};
       if(!r.scrambleDrives)r.scrambleDrives={};
+      // Firebase turns arrays into objects — convert back
+      r.groups.forEach((_,gi)=>{
+        r.scrambleScores[gi]=toArr(r.scrambleScores[gi],r.holes||18,0);
+        r.scrambleDrives[gi]=toArr(r.scrambleDrives[gi],r.holes||18,null);
+      });
       r.players.forEach(p=>{
         if(!r.scores[p]||!Array.isArray(r.scores[p]))
           r.scores[p]=new Array(r.holes||18).fill(0);
       });
-    }catch(e){/* skip corrupt round */}
+    }catch(e){}
   });
 }function save(){
   localStorage.setItem(SK,JSON.stringify(S.rounds));
@@ -627,6 +643,10 @@ async function pullFromCloud(){
         if(!r.minDrives) r.minDrives=2;
         if(!r.scrambleScores)r.scrambleScores={};
         if(!r.scrambleDrives)r.scrambleDrives={};
+        r.groups.forEach((_,gi)=>{
+          r.scrambleScores[gi]=toArr(r.scrambleScores[gi],r.holes||18,0);
+          r.scrambleDrives[gi]=toArr(r.scrambleDrives[gi],r.holes||18,null);
+        });
         r.players.forEach(p=>{
           if(!r.scores[p]||!Array.isArray(r.scores[p]))
             r.scores[p]=new Array(r.holes||18).fill(0);
@@ -1318,8 +1338,8 @@ function buildScrambleRows(r){
   const cols=r.holes+2;
   let html='';
   groups.forEach((g,gi)=>{
-    const scores=ss[gi]||new Array(r.holes).fill(0);
-    const drives=sd[gi]||new Array(r.holes).fill(null);
+    const scores=toArr(ss[gi],r.holes,0);
+    const drives=toArr(sd[gi],r.holes,null);
     const teeStr=g.teeTime?` · 🕐 ${g.teeTime}`:'';
     html+=`<tr class="sc-group-row"><td colspan="${cols+1}">🤝 Group ${gi+1}${teeStr}</td></tr>`;
     // Team score row
@@ -1622,8 +1642,8 @@ function renderStats(){
     const sd=r.scrambleDrives||{};
     const minD=r.minDrives||2;
     el.innerHTML=groups.map((g,gi)=>{
-      const scores=ss[gi]||[];
-      const drives=sd[gi]||[];
+      const scores=toArr(ss[gi],r.holes,0);
+      const drives=toArr(sd[gi],r.holes,null);
       const tot=scores.reduce((a,b)=>a+(b||0),0);
       const played=scores.filter(s=>s>0).length;
       let vp=0;scores.forEach((s,i)=>{if(s>0)vp+=s-r.pars[i];});
