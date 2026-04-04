@@ -566,16 +566,25 @@ const S={
 const PL_KEY='roytel2026_players';
 function load(){
   try{S.rounds=JSON.parse(localStorage.getItem(SK))||[];}catch(e){S.rounds=[];}
-  // Normalize old rounds that may be missing fields added in later versions
+  S.rounds=S.rounds.filter(r=>r&&r.id&&r.date); // discard corrupt entries
   S.rounds.forEach(r=>{
-    if(!r.si)       r.si=COURSE.si.slice(0,r.holes||18);
-    if(!r.scoring)  r.scoring='stroke';
-    if(!r.groups)   r.groups=[];
-    if(!r.handicaps)r.handicaps={};
-    if(!r.minDrives)r.minDrives=2;
-    if(!r.scrambleScores)r.scrambleScores={};
-    if(!r.scrambleDrives)r.scrambleDrives={};
-    r.players.forEach(p=>{ if(r.scores[p]===undefined)r.scores[p]=new Array(r.holes||18).fill(0); });
+    try{
+      if(!r.players)   r.players=[];
+      if(!r.scores)    r.scores={};
+      if(!r.si)        r.si=COURSE.si.slice(0,r.holes||18);
+      if(!r.pars)      r.pars=COURSE.pars.slice(0,r.holes||18);
+      if(!r.scoring)   r.scoring='stroke';
+      if(!r.groups)    r.groups=[];
+      if(!r.handicaps) r.handicaps={};
+      if(!r.status)    r.status='live';
+      if(!r.minDrives) r.minDrives=2;
+      if(!r.scrambleScores)r.scrambleScores={};
+      if(!r.scrambleDrives)r.scrambleDrives={};
+      r.players.forEach(p=>{
+        if(!r.scores[p]||!Array.isArray(r.scores[p]))
+          r.scores[p]=new Array(r.holes||18).fill(0);
+      });
+    }catch(e){/* skip corrupt round */}
   });
 }function save(){
   localStorage.setItem(SK,JSON.stringify(S.rounds));
@@ -606,14 +615,23 @@ async function pullFromCloud(){
     const localOnly=S.rounds.filter(r=>!remoteIds.has(r.id));
     S.rounds=[...data.rounds,...localOnly];
     S.rounds.forEach(r=>{
-      if(!r.si)r.si=COURSE.si.slice(0,r.holes||18);
-      if(!r.scoring)r.scoring='stroke';
-      if(!r.groups)r.groups=[];
-      if(!r.handicaps)r.handicaps={};
-      if(!r.minDrives)r.minDrives=2;
-      if(!r.scrambleScores)r.scrambleScores={};
-      if(!r.scrambleDrives)r.scrambleDrives={};
-      r.players.forEach(p=>{if(r.scores[p]===undefined)r.scores[p]=new Array(r.holes||18).fill(0);});
+      try{
+        if(!r.players)   r.players=[];
+        if(!r.scores)    r.scores={};
+        if(!r.si)        r.si=COURSE.si.slice(0,r.holes||18);
+        if(!r.pars)      r.pars=COURSE.pars.slice(0,r.holes||18);
+        if(!r.scoring)   r.scoring='stroke';
+        if(!r.groups)    r.groups=[];
+        if(!r.handicaps) r.handicaps={};
+        if(!r.status)    r.status='live';
+        if(!r.minDrives) r.minDrives=2;
+        if(!r.scrambleScores)r.scrambleScores={};
+        if(!r.scrambleDrives)r.scrambleDrives={};
+        r.players.forEach(p=>{
+          if(!r.scores[p]||!Array.isArray(r.scores[p]))
+            r.scores[p]=new Array(r.holes||18).fill(0);
+        });
+      }catch(e){}
     });
     localStorage.setItem(SK,JSON.stringify(S.rounds));
   }catch(e){}
@@ -1189,6 +1207,7 @@ function startRound(id){
 
 // ── Open Round ────────────────────────────────────────────
 function openRound(id){
+  try{
   load();S.currentId=id;
   const r=getRound(id);if(!r){goHome();return;}
   document.getElementById('r-title').textContent=r.course;
@@ -1218,6 +1237,7 @@ function openRound(id){
   document.getElementById('btn-finish').style.display=(S.isAdmin&&r.status==='live')?'block':'none';
   document.getElementById('btn-edit').style.display=(S.isAdmin&&r.status!=='complete')?'block':'none';
   switchTab('sc');showPage('page-round');
+  }catch(e){alert('Error opening round: '+e.message);}
 }
 function roundBack(){if(S.isAdmin){showPage('page-admin');renderAdmin();}else goHome();}
 
