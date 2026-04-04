@@ -553,8 +553,20 @@ const S={
 
 // ── Storage ──────────────────────────────────────────────
 const PL_KEY='roytel2026_players';
-function load(){try{S.rounds=JSON.parse(localStorage.getItem(SK))||[];}catch(e){S.rounds=[];}}
-function save(){localStorage.setItem(SK,JSON.stringify(S.rounds));}
+function load(){
+  try{S.rounds=JSON.parse(localStorage.getItem(SK))||[];}catch(e){S.rounds=[];}
+  // Normalize old rounds that may be missing fields added in later versions
+  S.rounds.forEach(r=>{
+    if(!r.si)       r.si=COURSE.si.slice(0,r.holes||18);
+    if(!r.scoring)  r.scoring='stroke';
+    if(!r.groups)   r.groups=[];
+    if(!r.handicaps)r.handicaps={};
+    if(!r.minDrives)r.minDrives=2;
+    if(!r.scrambleScores)r.scrambleScores={};
+    if(!r.scrambleDrives)r.scrambleDrives={};
+    r.players.forEach(p=>{ if(r.scores[p]===undefined)r.scores[p]=new Array(r.holes||18).fill(0); });
+  });
+}function save(){localStorage.setItem(SK,JSON.stringify(S.rounds));}
 function getPin(){return localStorage.getItem(PK)||DEF_PIN;}
 function getRound(id){return S.rounds.find(r=>r.id===id);}
 function curRound(){return getRound(S.currentId);}
@@ -1388,6 +1400,7 @@ function saveScore(){
   r.scores[r.players[S.mCtx.pIdx]][S.mCtx.hole]=S.mScore;
   save();closeModal();renderScorecard();
 }
+function updateModal(){
   const r=getRound(S.mCtx.roundId),par=r.pars[S.mCtx.hole],si=r.si[S.mCtx.hole];
   const player=r.players[S.mCtx.pIdx];
   const hcp=r.handicaps?.[player]??0;
