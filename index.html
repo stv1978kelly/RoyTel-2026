@@ -316,35 +316,38 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
 
   <div id="sync-status-box"></div>
 
-  <!-- Step 1 -->
-  <div class="sec-head">Step 1 — Create Free Firebase Database</div>
-  <div style="font-size:13px;color:#374151;line-height:1.7;margin-bottom:12px">
-    1. Go to <strong>console.firebase.google.com</strong><br>
-    2. Click <strong>Add project</strong> → name it anything → Continue<br>
-    3. Left menu → <strong>Build → Realtime Database</strong> → Create database<br>
-    4. Choose <strong>Start in test mode</strong> → Enable<br>
-    5. Copy the database URL shown (ends in <code style="background:#f0f4ff;padding:1px 4px">.firebaseio.com</code> or <code style="background:#f0f4ff;padding:1px 4px">.firebasedatabase.app</code>)
-  </div>
-
+  <!-- URL entry - always visible, works on any device -->
   <label>Firebase Database URL</label>
   <input type="url" id="sync-fb-url"
     placeholder="https://your-app-default-rtdb.europe-west1.firebasedatabase.app/"
-    autocomplete="off"/>
-  <button class="btn btn-green" onclick="saveSyncConfig()">💾 Save &amp; Test</button>
+    autocomplete="off" style="font-size:13px"/>
+  <button class="btn btn-green" onclick="saveSyncConfig()">💾 Save &amp; Sync</button>
 
-  <!-- Step 2 -->
-  <div class="sec-head" style="margin-top:16px">Step 2 — Send to Your Phone</div>
-  <div id="sync-setup-share" style="margin-bottom:12px"></div>
+  <!-- Share setup link to other devices -->
+  <div id="sync-setup-share" style="margin-bottom:4px"></div>
 
   <!-- Manual controls -->
-  <div class="sec-head" style="margin-top:16px">Manual Sync</div>
+  <div class="sec-head" style="margin-top:8px">Manual Sync</div>
   <button class="btn btn-dark" onclick="pushToCloud(true)">☁️ Push My Data to Cloud</button>
-  <button class="btn btn-white" onclick="pullFromCloud(true).then(ok=>ok&&renderAdmin())">⬇️ Pull Latest from Cloud</button>
+  <button class="btn btn-white" onclick="pullFromCloud(true).then(ok=>{if(ok){load();renderAdmin();}})">⬇️ Pull Latest from Cloud</button>
 
-  <!-- Share individual rounds -->
-  <div class="sec-head" style="margin-top:16px">Share a Round Link</div>
+  <!-- How to set up Firebase - collapsed by default -->
+  <div class="sec-head" style="margin-top:16px;cursor:pointer" onclick="toggleFirebaseHelp()">
+    ℹ️ How to get a Firebase URL <span id="fb-help-toggle">▼</span>
+  </div>
+  <div id="fb-help" style="display:none;font-size:13px;color:#374151;line-height:1.7;margin-bottom:12px;padding:12px;background:var(--light);border-left:3px solid var(--blue)">
+    1. Go to <strong>console.firebase.google.com</strong><br>
+    2. <strong>Add project</strong> → any name → Continue<br>
+    3. Left menu → <strong>Build → Realtime Database</strong> → Create database<br>
+    4. Choose <strong>Start in test mode</strong> → Enable<br>
+    5. Copy the URL shown (ends in <code>.firebaseio.com</code> or <code>.firebasedatabase.app</code>)<br>
+    6. Paste it above and tap <strong>Save &amp; Sync</strong>
+  </div>
+
+  <!-- Share individual rounds without cloud -->
+  <div class="sec-head" style="margin-top:8px">Share a Round (no cloud needed)</div>
   <div style="font-size:13px;color:var(--muted);margin-bottom:10px">
-    No cloud setup? Share a round directly. Player opens link, data loads on their device.
+    Generate a one-tap link for any round. Player opens it, data loads instantly.
   </div>
   <div id="sync-share-rounds"></div>
 
@@ -729,27 +732,51 @@ function renderSyncPage(){
   const cfg=getSyncCfg();
   const fbUrl=cfg.fbUrl||'';
   document.getElementById('sync-fb-url').value=fbUrl;
+
+  // Status box — show URL prominently when configured
   const box=document.getElementById('sync-status-box');
-  box.innerHTML=fbUrl
-    ?`<div class="sync-bar ok"><div class="sync-dot ok"></div><div class="sync-info">Firebase connected ✓<small>${fbUrl}</small></div></div>`
-    :`<div class="sync-bar"><div class="sync-dot"></div><div class="sync-info">Not configured yet<small>Follow the steps below</small></div></div>`;
-  // Generate the "send to phone" link — encodes the Firebase URL so phone auto-configures
+  if(fbUrl){
+    box.innerHTML=`
+      <div class="sync-bar ok" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="sync-dot ok"></div>
+          <div class="sync-info">Cloud sync active ✓</div>
+        </div>
+        <div style="font-size:11px;color:#374151;word-break:break-all;padding:6px 8px;background:#fff;border:1px solid #d1fae5">${fbUrl}</div>
+        <div style="display:flex;gap:8px">
+          <button class="copy-btn" style="flex:1" onclick="copyText('${fbUrl}');showCopied('url-copied')">📋 Copy URL</button>
+          <button class="copy-btn" style="flex:1;background:var(--blue);color:#fff;border-color:var(--blue)" onclick="copySetupLink()">📱 Send to Phone</button>
+        </div>
+        <div id="url-copied" style="display:none;text-align:center;color:var(--green);font-size:12px;font-weight:700">✓ Copied!</div>
+      </div>`;
+  } else {
+    box.innerHTML=`<div class="sync-bar" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div style="display:flex;align-items:center;gap:8px"><div class="sync-dot"></div><div class="sync-info">Not configured yet</div></div>
+      <div style="font-size:12px;color:var(--muted)">
+        📱 <strong>Already have a Firebase URL?</strong> Paste it in the field below and tap Save.<br>
+        🖥️ <strong>First time?</strong> Click "How to get a Firebase URL" below for instructions.
+      </div>
+    </div>`;
+  }
+
+  // Setup share section
   const shareSetupEl=document.getElementById('sync-setup-share');
   if(shareSetupEl){
     if(fbUrl){
       const enc=btoa(unescape(encodeURIComponent(fbUrl)));
-      const setupUrl=location.href.split('?')[0]+'?fbsetup='+enc;
+      window._setupUrl=location.href.split('?')[0]+'?fbsetup='+enc;
       shareSetupEl.innerHTML=`
-        <div style="font-size:13px;color:#374151;margin-bottom:8px">
-          Share this link with any device to auto-configure cloud sync on that device:
-        </div>
-        <button class="btn btn-dark" onclick="copySetupLink()">📱 Copy Setup Link for Other Devices</button>
-        <div id="setup-link-copied" style="display:none;color:var(--green);font-size:13px;margin-top:6px;font-weight:700">✓ Copied! Send to your phone.</div>`;
-      window._setupUrl=setupUrl;
+        <div style="padding:10px;background:#fffbeb;border:2px solid #fbbf24;border-left:4px solid var(--amber);margin-bottom:8px">
+          <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:6px">📱 Set up another device in one tap:</div>
+          <div style="font-size:12px;color:#374151;margin-bottom:8px">Tap the button below, send the link to your phone via WhatsApp/email, then open it on your phone.</div>
+          <button class="btn btn-dark" style="margin-bottom:4px" onclick="copySetupLink()">📱 Copy Phone Setup Link</button>
+          <div id="setup-link-copied" style="display:none;color:var(--green);font-size:13px;font-weight:700;text-align:center">✓ Link copied! Send it to your phone.</div>
+        </div>`;
     } else {
-      shareSetupEl.innerHTML='<div style="color:var(--muted);font-size:13px">Configure Firebase first, then share with other devices.</div>';
+      shareSetupEl.innerHTML='';
     }
   }
+
   // Per-round share links
   load();
   const shareEl=document.getElementById('sync-share-rounds');
@@ -763,11 +790,26 @@ function renderSyncPage(){
     : '<div style="color:var(--muted);font-size:13px">No rounds yet</div>';
 }
 
+function toggleFirebaseHelp(){
+  const el=document.getElementById('fb-help');
+  const tog=document.getElementById('fb-help-toggle');
+  if(!el)return;
+  const showing=el.style.display!=='none';
+  el.style.display=showing?'none':'block';
+  if(tog) tog.textContent=showing?'▼':'▲';
+}
+
+function showCopied(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.style.display='block';
+  setTimeout(()=>{if(el)el.style.display='none';},2500);
+}
+
 function copySetupLink(){
   if(window._setupUrl){
     copyText(window._setupUrl);
-    document.getElementById('setup-link-copied').style.display='block';
-    setTimeout(()=>{const el=document.getElementById('setup-link-copied');if(el)el.style.display='none';},3000);
+    showCopied('setup-link-copied');
   }
 }
 
