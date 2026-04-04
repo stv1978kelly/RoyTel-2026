@@ -528,8 +528,10 @@ thead tr:nth-child(4) td:first-child{background:#f0fdf4}
 
 // ── Dalmahoy East Course — Yellow Tees ───────────────────
 const COURSE = {
-  name: 'Dalmahoy Golf and Country Club',
-  holes: 18,
+  name:   'Dalmahoy Golf and Country Club',
+  holes:  18,
+  slope:  127,   // Yellow tees slope rating
+  rating: 72.7,  // Yellow tees course rating
   names: [
     'On Ye Go','Southern Stroll',"Top 'o' the Brae",'Oasis',
     "Devil's Table",'7th Avenue','Scirocco','Old Spaniard','The Ha Ha',
@@ -537,9 +539,9 @@ const COURSE = {
     "Bagers' Hollow","O'er the Hummock",'Braids Brawest',
     'The Wee Wrecker','Solheim'
   ],
-  pars: [5,4,4,3,4,4,3,4,5, 5,4,4,4,4,4,4,3,5],
-  si:   [8,4,2,18,16,6,10,12,14, 15,7,13,1,5,11,3,17,9],
-  yards:[479,423,415,139,306,390,173,345,468, 477,426,396,428,371,410,410,181,447]
+  pars:  [5,4,4,3,4,4,3,4,5, 5,4,4,4,4,4,4,3,5],
+  si:    [8,4,2,18,16,6,10,12,14, 15,7,13,1,5,11,3,17,9],
+  yards: [479,423,415,139,306,390,173,345,468, 477,426,396,428,371,410,410,181,447]
 };
 
 // ── Storage keys ─────────────────────────────────────────
@@ -762,18 +764,23 @@ function scoreBtnClass(s,par){
 }
 
 // ── Handicap & Stableford ─────────────────────────────────
-function hcpStrokes(handicap, si, totalHoles){
-  // For 9-hole rounds, halve the handicap (rounded)
-  const hcp = totalHoles===9 ? Math.round(handicap/2) : Math.round(handicap);
-  if(hcp<=0) return 0;
-  const base=Math.floor(hcp/18);
-  return base + (si<=(hcp%18)?1:0);
+// WHS Course Handicap = HCP Index × (Slope / 113)
+// For 9-hole rounds the course HCP is halved
+function toCourseHcp(hcpIndex, holes){
+  const ch = Math.round(hcpIndex * (COURSE.slope / 113));
+  return holes === 9 ? Math.round(ch / 2) : ch;
 }
-function stablefordPts(gross,par,handicap,si,totalHoles){
-  if(!gross)return null;
-  const strokes=hcpStrokes(handicap,si,totalHoles);
-  const net=gross-strokes;
-  return Math.max(0, 2+par-net);
+// Strokes received on a specific hole based on course HCP and SI
+function hcpStrokes(hcpIndex, si, totalHoles){
+  const hcp = toCourseHcp(hcpIndex, totalHoles);
+  if(hcp <= 0) return 0;
+  const base = Math.floor(hcp / 18);
+  return base + (si <= (hcp % 18) ? 1 : 0);
+}
+function stablefordPts(gross, par, hcpIndex, si, totalHoles){
+  if(!gross) return null;
+  const net = gross - hcpStrokes(hcpIndex, si, totalHoles);
+  return Math.max(0, 2 + par - net);
 }
 function ptsClass(pts){
   if(pts===null)return'';
@@ -1293,7 +1300,8 @@ function buildPlayerRow(r,p,isStab){
     return `<td class="score-cell ${isStab?'pts-cell':''} ${editable?'editable':''} ${cellCls}" ${click}>${display}</td>`;
   }).join('');
   const meBadge=isMe?` <span style="font-size:10px;background:var(--amber);color:#fff;padding:1px 5px;font-weight:700">YOU</span>`:'';
-  const nameCell=`${p}${meBadge}<br><span style="font-size:10px;color:var(--muted)">HCP ${hcp}</span>`;
+  const courseHcp=toCourseHcp(hcp,r.holes);
+  const nameCell=`${p}${meBadge}<br><span style="font-size:10px;color:var(--muted)">Idx ${hcp} · CH ${courseHcp}</span>`;
   const rowStyle=isMe?` style="background:#fffbeb;"`:'';
   if(isStab){
     return `<tr${rowStyle}><td>${nameCell}</td>${cells}<td><b>${gross||'—'}</b></td><td class="${played>0?'green':''}"><b>${played>0?totalPts:'—'} pts</b></td></tr>`;
@@ -1433,9 +1441,10 @@ function openModal(roundId,pIdx,hole){
   S.mCtx={roundId,pIdx,hole};
   const par=r.pars[hole],si=r.si[hole],player=r.players[pIdx];
   const hcp=r.handicaps?.[player]??0;
+  const courseHcp=toCourseHcp(hcp,r.holes);
   S.mScore=(r.scores[player][hole]>0)?r.scores[player][hole]:par;
   document.getElementById('m-title').textContent=`Hole ${hole+1} — ${COURSE.names[hole]||''}`;
-  document.getElementById('m-meta').textContent=`Par ${par} · SI ${si} · ${player} (HCP ${hcp})`;
+  document.getElementById('m-meta').textContent=`Par ${par} · SI ${si} · ${player} (Idx ${hcp} / CH ${courseHcp})`;
   const stabEl=document.getElementById('m-stab');
   stabEl.style.display=r.scoring==='stableford'?'block':'none';
 
@@ -1619,13 +1628,14 @@ function renderLeaderboard(){
       subInfo=p.gross>0?p.gross+' strokes':'—';
     }
     const grpLabel=playerGroup(p.name);
+    const ch=toCourseHcp(p.hcp,r.holes);
     const rowCls=['gold','silver','bronze'][i]||'';
     const em=['🥇','🥈','🥉'][i]||'';
     return`<div class="lbrow ${rowCls}">
       <div class="lb-rank">${em||'#'+(i+1)}</div>
       <div>
         <div class="lb-name">${p.name}</div>
-        <div class="lb-sub">HCP ${p.hcp}${grpLabel?' · '+grpLabel:''} · ${subInfo} · ${p.played}/${r.holes} holes</div>
+        <div class="lb-sub">Idx ${p.hcp} · CH ${ch}${grpLabel?' · '+grpLabel:''} · ${subInfo} · ${p.played}/${r.holes} holes</div>
       </div>
       <div class="lb-score"><div class="vs-par ${mainCls}">${mainScore}</div></div>
     </div>`;
