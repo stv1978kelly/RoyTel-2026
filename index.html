@@ -123,7 +123,6 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
 .player-add-row .hcp-inp{flex:0 0 80px;text-align:center}
 .player-item{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--blue);background:#f8f9ff;margin-bottom:5px}
 .player-item .pi-name{font-size:14px;font-weight:700;color:var(--blue)}
-.player-item .pi-hcp{font-size:12px;color:var(--muted);font-weight:700}
 .del-btn{background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;padding:0 4px;font-weight:700;line-height:1}
 /* Format cards */
 .format-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
@@ -168,17 +167,6 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
 .empty-state{text-align:center;padding:36px 20px;color:var(--muted)}
 .empty-state .icon{font-size:36px;margin-bottom:10px}
 .empty-state p{font-size:14px}
-/* Cloud sync */
-.sync-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid var(--border);border-left:4px solid var(--blue);background:#f8f9ff;margin-bottom:10px;font-size:13px}
-.sync-bar.ok{border-left-color:var(--green);background:#f0fdf4}
-.sync-bar.err{border-left-color:var(--red);background:#fff0f0}
-.sync-bar.syncing{border-left-color:var(--amber);background:#fffbeb}
-.sync-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:var(--muted)}
-.sync-dot.ok{background:var(--green)}.sync-dot.err{background:var(--red)}.sync-dot.syncing{background:var(--amber)}
-.sync-info{flex:1;font-weight:700;color:var(--blue)}
-.sync-info small{display:block;font-weight:400;color:var(--muted);font-size:11px}
-.copy-btn{padding:6px 12px;border:2px solid var(--blue);background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:var(--blue);-webkit-tap-highlight-color:transparent;white-space:nowrap}
-.copy-btn:active{background:var(--blue);color:#fff}
 /* Bottom nav */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--blue);display:grid;border-top:4px solid var(--red);z-index:100}
 .nav-btn{padding:12px 4px 10px;border:none;background:none;color:#93b4e0;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;flex-direction:column;align-items:center;gap:3px;-webkit-tap-highlight-color:transparent}
@@ -552,9 +540,14 @@ const COURSE = {
   yards:[479,423,415,139,306,390,173,345,468, 477,426,396,428,371,410,410,181,447]
 };
 
-const SK='roytel2026_rounds', PK='roytel2026_pin', DEF_PIN='1234';
+// ── Storage keys ─────────────────────────────────────────
+const SK      = 'roytel2026_rounds';   // rounds data
+const PK      = 'roytel2026_pin';      // admin PIN
+const PL_KEY  = 'roytel2026_players';  // player registry
+const DEF_PIN = '1234';
 
-const S={
+// ── App state ─────────────────────────────────────────────
+const S = {
   rounds:[],currentId:null,isAdmin:false,currentPlayer:null,
   pinBuf:'',pinAction:null,
   holes:9,scoring:'stroke',players:[],groups:[],
@@ -562,9 +555,18 @@ const S={
   mScore:0,mCtx:null
 };
 
-// ── Storage ──────────────────────────────────────────────
-const PL_KEY='roytel2026_players';
-// Firebase converts JS arrays to objects with numeric keys — convert back
+// ── Firebase (background sync — invisible to users) ───────
+const FB_URL = 'https://roytel-f3efe-default-rtdb.europe-west1.firebasedatabase.app/roytel2026.json';
+
+async function pushToCloud(){
+  try{
+    await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({rounds:S.rounds,updated:Date.now()})});
+  }catch(e){}
+}
+
+// ── Storage helpers ───────────────────────────────────────
+// Firebase converts JS arrays→objects with numeric keys on round-trip — fix them back
 function toArr(val,len,def=null){
   if(Array.isArray(val))return val;
   if(val&&typeof val==='object'){
@@ -602,24 +604,16 @@ function load(){
       });
     }catch(e){}
   });
-}function save(){
-  localStorage.setItem(SK,JSON.stringify(S.rounds));
-  pushToCloud(); // silent background push
 }
+
+function save(){
+  localStorage.setItem(SK,JSON.stringify(S.rounds));
+  pushToCloud();
+}
+
 function getPin(){return localStorage.getItem(PK)||DEF_PIN;}
 function getRound(id){return S.rounds.find(r=>r.id===id);}
 function curRound(){return getRound(S.currentId);}
-
-
-// ── Background Cloud Sync ─────────────────────────────────
-const FB_URL='https://roytel-f3efe-default-rtdb.europe-west1.firebasedatabase.app/roytel2026.json';
-
-async function pushToCloud(){
-  try{
-    await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({rounds:S.rounds,updated:Date.now()})});
-  }catch(e){}
-}
 
 async function pullFromCloud(){
   try{
@@ -675,6 +669,7 @@ function checkUrlImport(){
   }catch(e){}
 }
 
+// ── Player Database ───────────────────────────────────────
 function loadPlayerDb(){try{return JSON.parse(localStorage.getItem(PL_KEY))||[];}catch(e){return[];}}
 function savePlayerDb(db){localStorage.setItem(PL_KEY,JSON.stringify(db));}
 function upsertPlayerDb(name,hcp){
