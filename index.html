@@ -1188,9 +1188,7 @@ function startRound(id){
 }
 
 // ── Open Round ────────────────────────────────────────────
-async function openRound(id){
-  // Pull latest from cloud silently before opening (never blocks on failure)
-  try{ await pullFromCloud(); }catch(e){}
+function openRound(id){
   load();S.currentId=id;
   const r=getRound(id);if(!r){goHome();return;}
   document.getElementById('r-title').textContent=r.course;
