@@ -291,7 +291,6 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
     <div class="stripe"></div>
   </div>
   <div class="admin-bar">🔐 Admin Session Active</div>
-  <div id="admin-sync-bar"></div>
   <button class="btn btn-green" onclick="initSetup(null);showPage('page-setup')">＋ Create New Competition</button>
   <div class="sec-head" style="margin-top:4px">Scheduled</div>
   <div id="admin-sched"></div>
@@ -300,58 +299,9 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
   <div class="sec-head" style="margin-top:16px">Completed</div>
   <div id="admin-done"></div>
   <div style="margin-top:20px">
-    <button class="btn btn-dark" onclick="showPage('page-sync');renderSyncPage()">☁️ Cloud Sync Settings</button>
     <button class="btn btn-dark" onclick="showPage('page-players');renderPlayersPage()">👥 Manage Players</button>
     <button class="btn btn-white" onclick="adminLogout()">Log Out of Admin</button>
   </div>
-</div>
-
-<!-- ══ CLOUD SYNC PAGE ══════════════════════════════════ -->
-<div class="page" id="page-sync">
-  <div class="topbar">
-    <div class="topbar-inner"><h1>Cloud Sync</h1><p>Cross-Device Data</p></div>
-    <div class="stripe"></div>
-  </div>
-  <div class="admin-bar">🔐 Admin</div>
-
-  <div id="sync-status-box"></div>
-
-  <!-- URL entry - always visible, works on any device -->
-  <label>Firebase Database URL</label>
-  <input type="url" id="sync-fb-url"
-    placeholder="https://your-app-default-rtdb.europe-west1.firebasedatabase.app/"
-    autocomplete="off" style="font-size:13px"/>
-  <button class="btn btn-green" onclick="saveSyncConfig()">💾 Save &amp; Sync</button>
-
-  <!-- Share setup link to other devices -->
-  <div id="sync-setup-share" style="margin-bottom:4px"></div>
-
-  <!-- Manual controls -->
-  <div class="sec-head" style="margin-top:8px">Manual Sync</div>
-  <button class="btn btn-dark" onclick="pushToCloud(true)">☁️ Push My Data to Cloud</button>
-  <button class="btn btn-white" onclick="pullFromCloud(true).then(ok=>{if(ok){load();renderAdmin();}})">⬇️ Pull Latest from Cloud</button>
-
-  <!-- How to set up Firebase - collapsed by default -->
-  <div class="sec-head" style="margin-top:16px;cursor:pointer" onclick="toggleFirebaseHelp()">
-    ℹ️ How to get a Firebase URL <span id="fb-help-toggle">▼</span>
-  </div>
-  <div id="fb-help" style="display:none;font-size:13px;color:#374151;line-height:1.7;margin-bottom:12px;padding:12px;background:var(--light);border-left:3px solid var(--blue)">
-    1. Go to <strong>console.firebase.google.com</strong><br>
-    2. <strong>Add project</strong> → any name → Continue<br>
-    3. Left menu → <strong>Build → Realtime Database</strong> → Create database<br>
-    4. Choose <strong>Start in test mode</strong> → Enable<br>
-    5. Copy the URL shown (ends in <code>.firebaseio.com</code> or <code>.firebasedatabase.app</code>)<br>
-    6. Paste it above and tap <strong>Save &amp; Sync</strong>
-  </div>
-
-  <!-- Share individual rounds without cloud -->
-  <div class="sec-head" style="margin-top:8px">Share a Round (no cloud needed)</div>
-  <div style="font-size:13px;color:var(--muted);margin-bottom:10px">
-    Generate a one-tap link for any round. Player opens it, data loads instantly.
-  </div>
-  <div id="sync-share-rounds"></div>
-
-  <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()" style="margin-top:8px">← Back to Admin</button>
 </div>
 
 <!-- ══ PLAYERS PAGE ══════════════════════════════════════ -->
@@ -629,63 +579,32 @@ function load(){
   });
 }function save(){
   localStorage.setItem(SK,JSON.stringify(S.rounds));
-  // Auto-push to cloud if configured (non-blocking)
-  const cfg=getSyncCfg();
-  if(cfg.fbUrl) pushToCloud(false);
+  pushToCloud(); // silent background push
 }
 function getPin(){return localStorage.getItem(PK)||DEF_PIN;}
 function getRound(id){return S.rounds.find(r=>r.id===id);}
 function curRound(){return getRound(S.currentId);}
 
-// ── Cloud Sync (JSONBin.io) ───────────────────────────────
-const SYNC_KEY='roytel2026_sync';
-function getSyncCfg(){try{return JSON.parse(localStorage.getItem(SYNC_KEY))||{};}catch(e){return{};}}
-function setSyncCfg(cfg){localStorage.setItem(SYNC_KEY,JSON.stringify(cfg));}
 
-async function pushToCloud(showFeedback){
-  const cfg=getSyncCfg();
-  if(!cfg.fbUrl){
-    if(showFeedback)alert('No Firebase URL set. Go to ☁️ Cloud Sync Settings.');
-    return false;
-  }
-  setSyncStatus('syncing','Syncing to cloud…');
+// ── Background Cloud Sync ─────────────────────────────────
+const FB_URL='https://roytel-f3efe-default-rtdb.europe-west1.firebasedatabase.app/roytel2026.json';
+
+async function pushToCloud(){
   try{
-    const endpoint=cfg.fbUrl.replace(/\/+$/,'')+'/roytel2026.json';
-    const resp=await fetch(endpoint,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({rounds:S.rounds,updated:Date.now()})
-    });
-    if(resp.ok){
-      setSyncStatus('ok','Synced ✓',new Date().toLocaleTimeString());
-      if(showFeedback)alert('✓ Data pushed to cloud!');
-      return true;
-    }else{
-      const txt=await resp.text();
-      setSyncStatus('err','Push failed ('+resp.status+'): '+txt.slice(0,80));
-      return false;
-    }
-  }catch(e){
-    setSyncStatus('err','Push error: '+e.message);
-    return false;
-  }
+    await fetch(FB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({rounds:S.rounds,updated:Date.now()})});
+  }catch(e){}
 }
 
-async function pullFromCloud(showFeedback){
-  const cfg=getSyncCfg();
-  if(!cfg.fbUrl) return false;
-  if(showFeedback) setSyncStatus('syncing','Fetching from cloud…');
+async function pullFromCloud(){
   try{
-    const endpoint=cfg.fbUrl.replace(/\/+$/,'')+'/roytel2026.json';
-    const resp=await fetch(endpoint);
-    if(!resp.ok) return false;
+    const resp=await fetch(FB_URL);
+    if(!resp.ok)return;
     const data=await resp.json();
-    if(!data||!data.rounds||!Array.isArray(data.rounds)) return false;
-    // Merge: cloud is source of truth, keep local-only rounds as fallback
+    if(!data||!Array.isArray(data.rounds))return;
     const remoteIds=new Set(data.rounds.map(r=>r.id));
     const localOnly=S.rounds.filter(r=>!remoteIds.has(r.id));
     S.rounds=[...data.rounds,...localOnly];
-    // Normalize all rounds
     S.rounds.forEach(r=>{
       if(!r.si)r.si=COURSE.si.slice(0,r.holes||18);
       if(!r.scoring)r.scoring='stroke';
@@ -697,177 +616,27 @@ async function pullFromCloud(showFeedback){
       r.players.forEach(p=>{if(r.scores[p]===undefined)r.scores[p]=new Array(r.holes||18).fill(0);});
     });
     localStorage.setItem(SK,JSON.stringify(S.rounds));
-    if(showFeedback){
-      setSyncStatus('ok','Pulled from cloud ✓',new Date().toLocaleTimeString());
-      alert('✓ Data updated from cloud!');
-    }
-    return true;
-  }catch(e){
-    if(showFeedback) setSyncStatus('err','Pull error: '+e.message);
-    return false;
-  }
-}
-
-function setSyncStatus(state,msg,sub){
-  const bar=document.getElementById('admin-sync-bar');
-  if(!bar)return;
-  bar.innerHTML=`<div class="sync-bar ${state}">
-    <div class="sync-dot ${state}"></div>
-    <div class="sync-info">${msg}<small>${sub||''}</small></div>
-  </div>`;
-}
-
-function saveSyncConfig(){
-  const fbUrl=document.getElementById('sync-fb-url').value.trim();
-  if(!fbUrl||(!fbUrl.includes('firebaseio.com')&&!fbUrl.includes('firebasedatabase.app'))){
-    alert('Please enter a valid Firebase Realtime Database URL\n(e.g. https://your-app-default-rtdb.europe-west1.firebasedatabase.app/)');
-    return;
-  }
-  setSyncCfg({fbUrl});
-  renderSyncPage();
-  pushToCloud(true);
-}
-
-function renderSyncPage(){
-  const cfg=getSyncCfg();
-  const fbUrl=cfg.fbUrl||'';
-  document.getElementById('sync-fb-url').value=fbUrl;
-
-  // Status box — show URL prominently when configured
-  const box=document.getElementById('sync-status-box');
-  if(fbUrl){
-    box.innerHTML=`
-      <div class="sync-bar ok" style="flex-direction:column;align-items:stretch;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="sync-dot ok"></div>
-          <div class="sync-info">Cloud sync active ✓</div>
-        </div>
-        <div style="font-size:11px;color:#374151;word-break:break-all;padding:6px 8px;background:#fff;border:1px solid #d1fae5">${fbUrl}</div>
-        <div style="display:flex;gap:8px">
-          <button class="copy-btn" style="flex:1" onclick="copyText('${fbUrl}');showCopied('url-copied')">📋 Copy URL</button>
-          <button class="copy-btn" style="flex:1;background:var(--blue);color:#fff;border-color:var(--blue)" onclick="copySetupLink()">📱 Send to Phone</button>
-        </div>
-        <div id="url-copied" style="display:none;text-align:center;color:var(--green);font-size:12px;font-weight:700">✓ Copied!</div>
-      </div>`;
-  } else {
-    box.innerHTML=`<div class="sync-bar" style="flex-direction:column;align-items:stretch;gap:6px">
-      <div style="display:flex;align-items:center;gap:8px"><div class="sync-dot"></div><div class="sync-info">Not configured yet</div></div>
-      <div style="font-size:12px;color:var(--muted)">
-        📱 <strong>Already have a Firebase URL?</strong> Paste it in the field below and tap Save.<br>
-        🖥️ <strong>First time?</strong> Click "How to get a Firebase URL" below for instructions.
-      </div>
-    </div>`;
-  }
-
-  // Setup share section
-  const shareSetupEl=document.getElementById('sync-setup-share');
-  if(shareSetupEl){
-    if(fbUrl){
-      const enc=btoa(unescape(encodeURIComponent(fbUrl)));
-      window._setupUrl=location.href.split('?')[0]+'?fbsetup='+enc;
-      shareSetupEl.innerHTML=`
-        <div style="padding:10px;background:#fffbeb;border:2px solid #fbbf24;border-left:4px solid var(--amber);margin-bottom:8px">
-          <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:6px">📱 Set up another device in one tap:</div>
-          <div style="font-size:12px;color:#374151;margin-bottom:8px">Tap the button below, send the link to your phone via WhatsApp/email, then open it on your phone.</div>
-          <button class="btn btn-dark" style="margin-bottom:4px" onclick="copySetupLink()">📱 Copy Phone Setup Link</button>
-          <div id="setup-link-copied" style="display:none;color:var(--green);font-size:13px;font-weight:700;text-align:center">✓ Link copied! Send it to your phone.</div>
-        </div>`;
-    } else {
-      shareSetupEl.innerHTML='';
-    }
-  }
-
-  // Per-round share links
-  load();
-  const shareEl=document.getElementById('sync-share-rounds');
-  if(shareEl) shareEl.innerHTML=S.rounds.length
-    ? S.rounds.slice().reverse().map(r=>`
-        <div style="margin-bottom:10px;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--blue)">
-          <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:4px">${r.course} · ${fmtDate(r.date)}</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Code: ${r.id} · ${r.status}</div>
-          <button class="copy-btn" onclick="shareRound('${r.id}')">📋 Copy Round Link</button>
-        </div>`).join('')
-    : '<div style="color:var(--muted);font-size:13px">No rounds yet</div>';
-}
-
-function toggleFirebaseHelp(){
-  const el=document.getElementById('fb-help');
-  const tog=document.getElementById('fb-help-toggle');
-  if(!el)return;
-  const showing=el.style.display!=='none';
-  el.style.display=showing?'none':'block';
-  if(tog) tog.textContent=showing?'▼':'▲';
-}
-
-function showCopied(id){
-  const el=document.getElementById(id);
-  if(!el)return;
-  el.style.display='block';
-  setTimeout(()=>{if(el)el.style.display='none';},2500);
-}
-
-function copySetupLink(){
-  if(window._setupUrl){
-    copyText(window._setupUrl);
-    showCopied('setup-link-copied');
-  }
-}
-
-function shareRound(id){
-  const r=getRound(id);if(!r)return;
-  const enc=btoa(unescape(encodeURIComponent(JSON.stringify(r))));
-  const url=location.href.split('?')[0]+'?round='+enc;
-  copyText(url);
-  alert('✓ Link copied! Share it with players. When they open it on their device, the round loads automatically.');
-}
-
-function copyText(txt){
-  navigator.clipboard?.writeText(txt).catch(()=>{
-    const el=document.createElement('textarea');
-    el.value=txt;document.body.appendChild(el);el.select();
-    document.execCommand('copy');document.body.removeChild(el);
-  });
-}
-
-// ── URL imports (runs on boot) ────────────────────────────
-function checkUrlImport(){
-  try{
-    const p=new URLSearchParams(location.search);
-
-    // ?fbsetup=BASE64 — configures Firebase URL on this device
-    const fbSetup=p.get('fbsetup');
-    if(fbSetup){
-      const fbUrl=decodeURIComponent(escape(atob(fbSetup)));
-      if(fbUrl&&(fbUrl.includes('firebaseio.com')||fbUrl.includes('firebasedatabase.app'))){
-        setSyncCfg({fbUrl});
-        history.replaceState({},'',location.href.split('?')[0]);
-        alert('✓ Cloud sync configured!\nThis device will now automatically sync with the shared competition data.');
-        return;
-      }
-    }
-
-    // ?round=BASE64 — imports a single round
-    const enc=p.get('round');
-    if(enc){
-      const r=JSON.parse(decodeURIComponent(escape(atob(enc))));
-      if(!r||!r.id)return;
-      load();
-      const existing=S.rounds.findIndex(x=>x.id===r.id);
-      if(existing>=0)S.rounds[existing]=r;else S.rounds.push(r);
-      localStorage.setItem(SK,JSON.stringify(S.rounds));
-      history.replaceState({},'',location.href.split('?')[0]);
-      const inp=document.getElementById('join-code-input');
-      if(inp) inp.value=r.id;
-      alert(`✓ Competition "${r.course}" loaded!\nCode: ${r.id}\nTap Join to enter.`);
-    }
   }catch(e){}
 }
 
-// Pull from cloud silently if configured
-async function tryCloudPull(){
-  const cfg=getSyncCfg();
-  if(cfg.fbUrl) await pullFromCloud(false);
+async function tryCloudPull(){try{await pullFromCloud();}catch(e){}}
+function checkUrlImport(){
+  try{
+    const p=new URLSearchParams(location.search);
+    const enc=p.get('round');
+    if(!enc)return;
+    const r=JSON.parse(decodeURIComponent(escape(atob(enc))));
+    if(!r||!r.id)return;
+    load();
+    const existing=S.rounds.findIndex(x=>x.id===r.id);
+    if(existing>=0)S.rounds[existing]=r;else S.rounds.push(r);
+    localStorage.setItem(SK,JSON.stringify(S.rounds));
+    history.replaceState({},'',location.href.split('?')[0]);
+    const inp=document.getElementById('join-code-input');
+    if(inp)inp.value=r.id;
+  }catch(e){}
 }
+
 function loadPlayerDb(){try{return JSON.parse(localStorage.getItem(PL_KEY))||[];}catch(e){return[];}}
 function savePlayerDb(db){localStorage.setItem(PL_KEY,JSON.stringify(db));}
 function upsertPlayerDb(name,hcp){
@@ -1039,8 +808,7 @@ function refreshNav(pageId){
   const map={
     'page-home':'nav-home','page-round':'nav-round',
     'page-archive':'nav-results',
-    'page-admin':'nav-admin','page-setup':'nav-admin',
-    'page-players':'nav-admin','page-sync':'nav-admin'
+    'page-admin':'nav-admin','page-setup':'nav-admin','page-players':'nav-admin'
   };
   const a=map[pageId];if(a){const b=document.getElementById(a);if(b)b.classList.add('on');}
 }
@@ -1137,18 +905,9 @@ function adminLogout(){S.isAdmin=false;goHome();}
 
 // ── Admin ─────────────────────────────────────────────────
 async function renderAdmin(){
+  // Pull latest from cloud silently before rendering
+  try{ await pullFromCloud(); }catch(e){}
   load();
-  // Show loading indicator while syncing
-  const syncBar=document.getElementById('admin-sync-bar');
-  if(syncBar) syncBar.innerHTML=`<div class="sync-bar syncing"><div class="sync-dot syncing"></div><div class="sync-info">Updating from cloud…<small>Please wait</small></div></div>`;
-  // Pull latest from cloud if configured
-  const cfg=getSyncCfg();
-  if(cfg.fbUrl){
-    await pullFromCloud(false);
-    load(); // reload after pull
-  } else {
-    if(syncBar) syncBar.innerHTML=`<div class="sync-bar"><div class="sync-dot"></div><div class="sync-info">Cloud sync not set up<small>Admin → ☁️ Cloud Sync Settings to enable</small></div></div>`;
-  }
   const sched=S.rounds.filter(r=>r.status==='scheduled');
   const live=S.rounds.filter(r=>r.status==='live');
   const done=S.rounds.filter(r=>r.status==='complete').slice().reverse();
@@ -1431,7 +1190,7 @@ function startRound(id){
 // ── Open Round ────────────────────────────────────────────
 async function openRound(id){
   // Pull latest from cloud silently before opening (never blocks on failure)
-  try{ const cfg=getSyncCfg(); if(cfg.fbUrl) await pullFromCloud(false); }catch(e){}
+  try{ await pullFromCloud(); }catch(e){}
   load();S.currentId=id;
   const r=getRound(id);if(!r){goHome();return;}
   document.getElementById('r-title').textContent=r.course;
