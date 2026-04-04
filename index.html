@@ -1063,8 +1063,8 @@ async function joinRound(){
   const errEl=document.getElementById('join-err');
   errEl.style.display='none';
   if(code.length<6){errEl.textContent='Please enter a valid 6-character code.';errEl.style.display='block';return;}
-  // Pull latest from cloud before checking (silently)
-  await tryCloudPull();
+  // Pull latest from cloud before checking (silently — never blocks join on failure)
+  try{ await tryCloudPull(); }catch(e){}
   load();
   const r=S.rounds.find(r=>r.id===code);
   if(!r){errEl.textContent='Code not found. Check with your organiser.';errEl.style.display='block';return;}
@@ -1143,7 +1143,7 @@ async function renderAdmin(){
   if(syncBar) syncBar.innerHTML=`<div class="sync-bar syncing"><div class="sync-dot syncing"></div><div class="sync-info">Updating from cloud…<small>Please wait</small></div></div>`;
   // Pull latest from cloud if configured
   const cfg=getSyncCfg();
-  if(cfg.binId){
+  if(cfg.fbUrl){
     await pullFromCloud(false);
     load(); // reload after pull
   } else {
@@ -1430,9 +1430,8 @@ function startRound(id){
 
 // ── Open Round ────────────────────────────────────────────
 async function openRound(id){
-  // Pull latest from cloud silently before opening
-  const cfg=getSyncCfg();
-  if(cfg.binId) await pullFromCloud(false);
+  // Pull latest from cloud silently before opening (never blocks on failure)
+  try{ const cfg=getSyncCfg(); if(cfg.fbUrl) await pullFromCloud(false); }catch(e){}
   load();S.currentId=id;
   const r=getRound(id);if(!r){goHome();return;}
   document.getElementById('r-title').textContent=r.course;
