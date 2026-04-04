@@ -385,7 +385,7 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
           <li>This continues until the ball is holed</li>
           <li>Each team member must contribute a minimum number of drives</li>
           <li>Minimum drives = holes ÷ players (rounded down)</li>
-          <li>Team handicap = 25% of combined player handicaps</li>
+          <li>Team handicap = combined player handicaps minus 25%</li>
         </ul>
       </div>
       <div class="scramble-opts">
@@ -1443,8 +1443,8 @@ function renderLeaderboard(){
       const played=scores.filter(s=>s>0).length;
       const tot=scores.reduce((a,b)=>a+(b||0),0);
       let vp=0;scores.forEach((s,i)=>{if(s>0)vp+=s-r.pars[i];});
-      // Team handicap = 25% of combined HCPs
-      const teamHcp=Math.round(g.players.reduce((a,p)=>a+(r.handicaps?.[p]??0),0)*0.25);
+      // Team handicap = combined player handicaps minus 25%
+      const teamHcp=Math.round(g.players.reduce((a,p)=>a+(r.handicaps?.[p]??0),0)*0.75);
       const net=tot>0?tot-teamHcp:0;
       return{gi,g,played,tot,vp,net,teamHcp,sk:played>0?vp:9999};
     }).sort((a,b)=>a.sk-b.sk);
@@ -1539,7 +1539,7 @@ function renderStats(){
           <div style="font-size:10px;color:${ok?'var(--green)':'var(--red)'}">${ok?'✓ OK':'Min '+minD}</div>
         </div>`;
       }).join('');
-      const teamHcp=Math.round(g.players.reduce((a,p)=>a+(r.handicaps?.[p]??0),0)*0.25);
+      const teamHcp=Math.round(g.players.reduce((a,p)=>a+(r.handicaps?.[p]??0),0)*0.75);
       return`<div style="margin-bottom:20px">
         <div class="sec-head">🤝 Group ${gi+1}${g.teeTime?' · '+g.teeTime:''}</div>
         <div class="g4">
