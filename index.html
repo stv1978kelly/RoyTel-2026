@@ -168,6 +168,17 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
 .empty-state{text-align:center;padding:36px 20px;color:var(--muted)}
 .empty-state .icon{font-size:36px;margin-bottom:10px}
 .empty-state p{font-size:14px}
+/* Cloud sync */
+.sync-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border:2px solid var(--border);border-left:4px solid var(--blue);background:#f8f9ff;margin-bottom:10px;font-size:13px}
+.sync-bar.ok{border-left-color:var(--green);background:#f0fdf4}
+.sync-bar.err{border-left-color:var(--red);background:#fff0f0}
+.sync-bar.syncing{border-left-color:var(--amber);background:#fffbeb}
+.sync-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;background:var(--muted)}
+.sync-dot.ok{background:var(--green)}.sync-dot.err{background:var(--red)}.sync-dot.syncing{background:var(--amber)}
+.sync-info{flex:1;font-weight:700;color:var(--blue)}
+.sync-info small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.copy-btn{padding:6px 12px;border:2px solid var(--blue);background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:var(--blue);-webkit-tap-highlight-color:transparent;white-space:nowrap}
+.copy-btn:active{background:var(--blue);color:#fff}
 /* Bottom nav */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--blue);display:grid;border-top:4px solid var(--red);z-index:100}
 .nav-btn{padding:12px 4px 10px;border:none;background:none;color:#93b4e0;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;display:flex;flex-direction:column;align-items:center;gap:3px;-webkit-tap-highlight-color:transparent}
@@ -280,6 +291,7 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
     <div class="stripe"></div>
   </div>
   <div class="admin-bar">🔐 Admin Session Active</div>
+  <div id="admin-sync-bar"></div>
   <button class="btn btn-green" onclick="initSetup(null);showPage('page-setup')">＋ Create New Competition</button>
   <div class="sec-head" style="margin-top:4px">Scheduled</div>
   <div id="admin-sched"></div>
@@ -288,9 +300,46 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
   <div class="sec-head" style="margin-top:16px">Completed</div>
   <div id="admin-done"></div>
   <div style="margin-top:20px">
+    <button class="btn btn-dark" onclick="showPage('page-sync');renderSyncPage()">☁️ Cloud Sync Settings</button>
     <button class="btn btn-dark" onclick="showPage('page-players');renderPlayersPage()">👥 Manage Players</button>
     <button class="btn btn-white" onclick="adminLogout()">Log Out of Admin</button>
   </div>
+</div>
+
+<!-- ══ CLOUD SYNC PAGE ══════════════════════════════════ -->
+<div class="page" id="page-sync">
+  <div class="topbar">
+    <div class="topbar-inner"><h1>Cloud Sync</h1><p>Cross-Device Data</p></div>
+    <div class="stripe"></div>
+  </div>
+  <div class="admin-bar">🔐 Admin</div>
+
+  <div id="sync-status-box"></div>
+
+  <div style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+    Cloud sync lets all devices see the same live data. Uses
+    <strong>JSONBin.io</strong> (free). Sign up at
+    <strong>jsonbin.io</strong>, copy your Master Key below.
+  </div>
+
+  <label>JSONBin Master Key</label>
+  <input type="password" id="sync-api-key" placeholder="$2a$10$..." autocomplete="off"/>
+
+  <label>Bin ID <span style="font-weight:400;font-size:11px">(auto-created on first sync)</span></label>
+  <input type="text" id="sync-bin-id" placeholder="Will be filled automatically" readonly
+    style="background:var(--light);color:var(--muted);cursor:default"/>
+
+  <button class="btn btn-green" onclick="saveSyncConfig()">💾 Save &amp; Test Connection</button>
+  <button class="btn btn-dark" onclick="pushToCloud(true)">☁️ Push Data to Cloud Now</button>
+  <button class="btn btn-white" onclick="pullFromCloud(true)">⬇️ Pull Data from Cloud</button>
+
+  <div class="sec-head" style="margin-top:20px">Share Without Cloud</div>
+  <div style="font-size:13px;color:var(--muted);margin-bottom:10px">
+    Generate a link to share a specific round. Anyone who opens it gets that round in their app.
+  </div>
+  <div id="sync-share-rounds"></div>
+
+  <button class="btn btn-white" onclick="showPage('page-admin');renderAdmin()" style="margin-top:8px">← Back to Admin</button>
 </div>
 
 <!-- ══ PLAYERS PAGE ══════════════════════════════════════ -->
@@ -566,12 +615,166 @@ function load(){
     if(!r.scrambleDrives)r.scrambleDrives={};
     r.players.forEach(p=>{ if(r.scores[p]===undefined)r.scores[p]=new Array(r.holes||18).fill(0); });
   });
-}function save(){localStorage.setItem(SK,JSON.stringify(S.rounds));}
+}function save(){
+  localStorage.setItem(SK,JSON.stringify(S.rounds));
+  // Auto-push to cloud if configured (non-blocking)
+  const cfg=getSyncCfg();
+  if(cfg.apiKey&&cfg.binId) pushToCloud(false);
+}
 function getPin(){return localStorage.getItem(PK)||DEF_PIN;}
 function getRound(id){return S.rounds.find(r=>r.id===id);}
 function curRound(){return getRound(S.currentId);}
 
-// ── Player Database ───────────────────────────────────────
+// ── Cloud Sync (JSONBin.io) ───────────────────────────────
+const SYNC_KEY='roytel2026_sync';
+function getSyncCfg(){try{return JSON.parse(localStorage.getItem(SYNC_KEY))||{};}catch(e){return{};}}
+function setSyncCfg(cfg){localStorage.setItem(SYNC_KEY,JSON.stringify(cfg));}
+
+async function pushToCloud(showFeedback){
+  const cfg=getSyncCfg();
+  if(!cfg.apiKey)return;
+  setSyncStatus('syncing','Syncing to cloud…');
+  try{
+    const body=JSON.stringify({rounds:S.rounds,updated:Date.now()});
+    const headers={'Content-Type':'application/json','X-Master-Key':cfg.apiKey};
+    let resp,json;
+    if(!cfg.binId){
+      // Create new bin
+      resp=await fetch('https://api.jsonbin.io/v3/b',{method:'POST',headers:{...headers,'X-Bin-Name':'RoyTel2026','X-Bin-Private':'false'},body});
+      json=await resp.json();
+      if(json.metadata?.id){
+        cfg.binId=json.metadata.id;setSyncCfg(cfg);
+        document.getElementById('sync-bin-id').value=cfg.binId;
+      }
+    }else{
+      resp=await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}`,{method:'PUT',headers,body});
+      json=await resp.json();
+    }
+    if(resp.ok){
+      setSyncStatus('ok','Synced to cloud ✓',new Date().toLocaleTimeString());
+      if(showFeedback)alert('✓ Data pushed to cloud successfully!');
+    }else{
+      setSyncStatus('err','Sync failed: '+(json.message||resp.status));
+    }
+  }catch(e){setSyncStatus('err','Sync error: '+e.message);}
+}
+
+async function pullFromCloud(showFeedback){
+  const cfg=getSyncCfg();
+  if(!cfg.binId){if(showFeedback)alert('No Bin ID. Push data to cloud first.');return;}
+  setSyncStatus('syncing','Fetching from cloud…');
+  try{
+    const headers=cfg.apiKey?{'X-Master-Key':cfg.apiKey}:{};
+    const resp=await fetch(`https://api.jsonbin.io/v3/b/${cfg.binId}/latest`,{headers});
+    const json=await resp.json();
+    if(resp.ok&&json.record?.rounds){
+      const remote=json.record.rounds;
+      // Merge: remote is source of truth, preserve local-only rounds
+      const remoteIds=new Set(remote.map(r=>r.id));
+      const localOnly=S.rounds.filter(r=>!remoteIds.has(r.id));
+      S.rounds=[...remote,...localOnly];
+      // Normalize
+      S.rounds.forEach(r=>{
+        if(!r.si)r.si=COURSE.si.slice(0,r.holes||18);
+        if(!r.scoring)r.scoring='stroke';
+        if(!r.groups)r.groups=[];
+        if(!r.handicaps)r.handicaps={};
+        if(!r.minDrives)r.minDrives=2;
+        if(!r.scrambleScores)r.scrambleScores={};
+        if(!r.scrambleDrives)r.scrambleDrives={};
+        r.players.forEach(p=>{if(r.scores[p]===undefined)r.scores[p]=new Array(r.holes||18).fill(0);});
+      });
+      localStorage.setItem(SK,JSON.stringify(S.rounds));
+      setSyncStatus('ok','Pulled from cloud ✓',new Date().toLocaleTimeString());
+      if(showFeedback){alert('✓ Data pulled from cloud!');renderAdmin();}
+    }else{
+      setSyncStatus('err','Pull failed: '+(json.message||resp.status));
+    }
+  }catch(e){setSyncStatus('err','Pull error: '+e.message);}
+}
+
+function setSyncStatus(state,msg,sub){
+  const bar=document.getElementById('admin-sync-bar');
+  if(!bar)return;
+  bar.innerHTML=`<div class="sync-bar ${state}">
+    <div class="sync-dot ${state}"></div>
+    <div class="sync-info">${msg}<small>${sub||''}</small></div>
+  </div>`;
+}
+
+function saveSyncConfig(){
+  const apiKey=document.getElementById('sync-api-key').value.trim();
+  const binId=document.getElementById('sync-bin-id').value.trim();
+  if(!apiKey){alert('Please enter your JSONBin Master Key.');return;}
+  setSyncCfg({apiKey,binId});
+  pushToCloud(true);
+}
+
+function renderSyncPage(){
+  const cfg=getSyncCfg();
+  document.getElementById('sync-api-key').value=cfg.apiKey||'';
+  document.getElementById('sync-bin-id').value=cfg.binId||'';
+  // Sync status box
+  const box=document.getElementById('sync-status-box');
+  box.innerHTML=cfg.binId
+    ?`<div class="sync-bar ok"><div class="sync-dot ok"></div><div class="sync-info">Cloud sync configured<small>Bin: ${cfg.binId}</small></div><button class="copy-btn" onclick="copyText('${cfg.binId}')">Copy ID</button></div>`
+    :`<div class="sync-bar"><div class="sync-dot"></div><div class="sync-info">Not configured<small>Enter your JSONBin key below</small></div></div>`;
+  // Per-round share links
+  load();
+  const shareEl=document.getElementById('sync-share-rounds');
+  shareEl.innerHTML=S.rounds.length?S.rounds.slice().reverse().map(r=>{
+    const enc=btoa(unescape(encodeURIComponent(JSON.stringify(r))));
+    const url=location.href.split('?')[0]+'?round='+enc;
+    return`<div style="margin-bottom:10px;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--blue)">
+      <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:4px">${r.course} · ${fmtDate(r.date)}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Code: ${r.id} · ${r.status}</div>
+      <button class="copy-btn" onclick="shareRound('${r.id}')">📋 Copy Share Link</button>
+    </div>`;
+  }).join(''):'<div style="color:var(--muted);font-size:13px">No rounds yet</div>';
+}
+
+function shareRound(id){
+  const r=getRound(id);if(!r)return;
+  const enc=btoa(unescape(encodeURIComponent(JSON.stringify(r))));
+  const url=location.href.split('?')[0]+'?round='+enc;
+  copyText(url);
+  alert('✓ Link copied! Share it with players. When they open it, the round will appear in their app.');
+}
+
+function copyText(txt){
+  navigator.clipboard?.writeText(txt).catch(()=>{
+    const el=document.createElement('textarea');
+    el.value=txt;document.body.appendChild(el);el.select();
+    document.execCommand('copy');document.body.removeChild(el);
+  });
+}
+
+// ── URL round import (runs on boot) ──────────────────────
+function checkUrlImport(){
+  try{
+    const p=new URLSearchParams(location.search);
+    const enc=p.get('round');
+    if(!enc)return;
+    const r=JSON.parse(decodeURIComponent(escape(atob(enc))));
+    if(!r||!r.id)return;
+    load();
+    const existing=S.rounds.findIndex(x=>x.id===r.id);
+    if(existing>=0)S.rounds[existing]=r;else S.rounds.push(r);
+    localStorage.setItem(SK,JSON.stringify(S.rounds));
+    // Clean URL
+    history.replaceState({},'',location.href.split('?')[0]);
+    // Pre-fill the code
+    const inp=document.getElementById('join-code-input');
+    if(inp){inp.value=r.id;}
+    alert(`✓ Competition "${r.course}" loaded!\nCode: ${r.id}\nTap Join to enter.`);
+  }catch(e){}
+}
+
+// Pull from cloud on join if configured
+async function tryCloudPull(){
+  const cfg=getSyncCfg();
+  if(cfg.binId) await pullFromCloud(false);
+}
 function loadPlayerDb(){try{return JSON.parse(localStorage.getItem(PL_KEY))||[];}catch(e){return[];}}
 function savePlayerDb(db){localStorage.setItem(PL_KEY,JSON.stringify(db));}
 function upsertPlayerDb(name,hcp){
@@ -743,7 +946,8 @@ function refreshNav(pageId){
   const map={
     'page-home':'nav-home','page-round':'nav-round',
     'page-archive':'nav-results',
-    'page-admin':'nav-admin','page-setup':'nav-admin','page-players':'nav-admin'
+    'page-admin':'nav-admin','page-setup':'nav-admin',
+    'page-players':'nav-admin','page-sync':'nav-admin'
   };
   const a=map[pageId];if(a){const b=document.getElementById(a);if(b)b.classList.add('on');}
 }
@@ -761,11 +965,13 @@ function goResults(){
   showPage('page-archive');
   renderArchive();
 }
-function joinRound(){
+async function joinRound(){
   const code=document.getElementById('join-code-input').value.trim().toUpperCase();
   const errEl=document.getElementById('join-err');
   errEl.style.display='none';
   if(code.length<6){errEl.textContent='Please enter a valid 6-character code.';errEl.style.display='block';return;}
+  // Pull latest from cloud before checking (silently)
+  await tryCloudPull();
   load();
   const r=S.rounds.find(r=>r.id===code);
   if(!r){errEl.textContent='Code not found. Check with your organiser.';errEl.style.display='block';return;}
@@ -1660,6 +1866,7 @@ function renderArchive(){
 
 // ── Boot ──────────────────────────────────────────────────
 load();
+checkUrlImport();
 </script>
 </body>
 </html>
