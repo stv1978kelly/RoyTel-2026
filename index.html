@@ -398,6 +398,22 @@ thead tr:nth-child(4) td:first-child{background:#f0fdf4}
 
   </div>
 
+  <label>HCP Allowance</label>
+  <div class="row" id="allowance-row" style="gap:6px;flex-wrap:wrap;margin-bottom:4px">
+    <button class="btn-sm" onclick="setAllowance(100)">100%</button>
+    <button class="btn-sm" onclick="setAllowance(90)">90%</button>
+    <button class="btn-sm" onclick="setAllowance(85)">85%</button>
+    <button class="btn-sm" onclick="setAllowance(75)">75%</button>
+    <button class="btn-sm" onclick="setAllowance(66)">66%</button>
+    <button class="btn-sm" onclick="setAllowance(50)">50%</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <input type="number" id="s-hcp-allowance" value="100" min="1" max="100"
+      style="width:90px;margin:0;text-align:center;font-size:18px;font-weight:900;color:var(--blue)"
+      onchange="syncAllowanceBtns(this.value)"/>
+    <span style="font-size:14px;color:var(--muted)">% of Course HCP played · e.g. CH 14 at 75% = <strong id="s-allowance-eg">14</strong> playing HCP</span>
+  </div>
+
   <label>Players <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(Name + Handicap)</span></label>
   <div id="s-saved-players" style="margin-bottom:10px"></div>
   <div class="player-add-row">
@@ -594,7 +610,8 @@ function load(){
       if(!r.groups)    r.groups=[];
       if(!r.handicaps) r.handicaps={};
       if(!r.status)    r.status='live';
-      if(!r.minDrives) r.minDrives=2;
+      if(!r.minDrives)          r.minDrives=2;
+      if(r.hcpAllowance==null)  r.hcpAllowance=100;
       if(!r.scrambleScores)r.scrambleScores={};
       if(!r.scrambleDrives)r.scrambleDrives={};
       // Firebase turns arrays into objects — convert back
@@ -638,7 +655,8 @@ async function pullFromCloud(){
         if(!r.groups)    r.groups=[];
         if(!r.handicaps) r.handicaps={};
         if(!r.status)    r.status='live';
-        if(!r.minDrives) r.minDrives=2;
+        if(!r.minDrives)         r.minDrives=2;
+        if(r.hcpAllowance==null) r.hcpAllowance=100;
         if(!r.scrambleScores)r.scrambleScores={};
         if(!r.scrambleDrives)r.scrambleDrives={};
         r.groups.forEach((_,gi)=>{
@@ -770,16 +788,20 @@ function toCourseHcp(hcpIndex, holes){
   const ch = Math.round(hcpIndex * (COURSE.slope / 113));
   return holes === 9 ? Math.round(ch / 2) : ch;
 }
-// Strokes received on a specific hole based on course HCP and SI
-function hcpStrokes(hcpIndex, si, totalHoles){
-  const hcp = toCourseHcp(hcpIndex, totalHoles);
+// Playing Handicap = Course HCP × allowance% (competition-specific)
+function playingHcp(hcpIndex, holes, allowancePct){
+  return Math.round(toCourseHcp(hcpIndex, holes) * ((allowancePct ?? 100) / 100));
+}
+// Strokes received on a specific hole based on playing HCP and SI
+function hcpStrokes(hcpIndex, si, totalHoles, allowancePct){
+  const hcp = playingHcp(hcpIndex, totalHoles, allowancePct);
   if(hcp <= 0) return 0;
   const base = Math.floor(hcp / 18);
   return base + (si <= (hcp % 18) ? 1 : 0);
 }
-function stablefordPts(gross, par, hcpIndex, si, totalHoles){
+function stablefordPts(gross, par, hcpIndex, si, totalHoles, allowancePct){
   if(!gross) return null;
-  const net = gross - hcpStrokes(hcpIndex, si, totalHoles);
+  const net = gross - hcpStrokes(hcpIndex, si, totalHoles, allowancePct);
   return Math.max(0, 2 + par - net);
 }
 function ptsClass(pts){
@@ -800,6 +822,7 @@ function scrambleTeamHcp(group, handicaps){
 function calcTotals(round,player){
   const sc=round.scores[player]||[];
   const hcp=round.handicaps?.[player]??0;
+  const allowance=round.hcpAllowance??100;
   const isStab=round.scoring==='stableford';
   let gross=0,played=0,vpNum=0,totalPts=0;
   sc.forEach((s,i)=>{
@@ -807,7 +830,7 @@ function calcTotals(round,player){
     const par=round.pars[i];
     const si=round.si[i];
     gross+=s; played++; vpNum+=s-par;
-    if(isStab) totalPts+=stablefordPts(s,par,hcp,si,round.holes)||0;
+    if(isStab) totalPts+=stablefordPts(s,par,hcp,si,round.holes,allowance)||0;
   });
   return{gross,played,vp:played>0?vpNum:9999,pts:totalPts};
 }
@@ -1016,6 +1039,8 @@ function initSetup(editId){
   });
   const md=document.getElementById('s-min-drives');
   if(md) md.value=isEdit?(getRound(editId)?.minDrives??2):2;
+  const savedAllowance=isEdit?(getRound(editId)?.hcpAllowance??100):100;
+  setAllowance(savedAllowance);
   document.getElementById('s-player').value='';
   document.getElementById('s-hcp').value='';
   document.getElementById('s-err').style.display='none';
@@ -1027,6 +1052,19 @@ function setHoles(n){
   S.holes=n;
   document.getElementById('h9').classList.toggle('on',n===9);
   document.getElementById('h18').classList.toggle('on',n===18);
+}
+function setAllowance(pct){
+  const inp=document.getElementById('s-hcp-allowance');
+  if(inp){ inp.value=pct; syncAllowanceBtns(pct); }
+}
+function syncAllowanceBtns(val){
+  const pct=parseInt(val)||100;
+  document.querySelectorAll('#allowance-row .btn-sm').forEach(b=>{
+    b.classList.toggle('on', parseInt(b.textContent)===pct);
+  });
+  // Update live example: CH 14 at this allowance
+  const eg=document.getElementById('s-allowance-eg');
+  if(eg) eg.textContent=Math.round(14*pct/100);
 }
 function setScoring(t){
   S.scoring=t;
@@ -1183,6 +1221,7 @@ function saveSetup(status){
   const handicaps={};
   S.players.forEach(p=>handicaps[p.name]=p.hcp);
   const minDrives=parseInt(document.getElementById('s-min-drives')?.value)||2;
+  const hcpAllowance=parseInt(document.getElementById('s-hcp-allowance')?.value)||100;
   const groups=S.groups.map(g=>({...g,players:[...g.players]}));
 
   const initScramble=(grps,holes)=>{
@@ -1195,7 +1234,7 @@ function saveSetup(status){
     load();
     const r=getRound(S.editId);if(!r)return;
     r.date=date;r.holes=S.holes;r.pars=pars;r.si=si;r.scoring=S.scoring;
-    r.handicaps=handicaps;r.groups=groups;r.minDrives=minDrives;
+    r.handicaps=handicaps;r.groups=groups;r.minDrives=minDrives;r.hcpAllowance=hcpAllowance;
     if(S.scoring==='scramble'&&(!r.scrambleScores||Object.keys(r.scrambleScores).length!==groups.length)){
       const{ss,sd}=initScramble(groups,S.holes);
       r.scrambleScores=ss;r.scrambleDrives=sd;
@@ -1214,7 +1253,7 @@ function saveSetup(status){
     const{ss,sd}=initScramble(groups,S.holes);
     const round={
       id:genId(),course:COURSE.name,date,holes:S.holes,
-      pars,si,scoring:S.scoring,minDrives,
+      pars,si,scoring:S.scoring,minDrives,hcpAllowance,
       players:S.players.map(p=>p.name),
       handicaps,scores,groups,
       scrambleScores:ss,scrambleDrives:sd,
@@ -1236,8 +1275,9 @@ function openRound(id){
   const r=getRound(id);if(!r){goHome();return;}
   document.getElementById('r-title').textContent=r.course;
   const fmtLabel=r.scoring==='stableford'?'Stableford':r.scoring==='scramble'?'Texas Scramble':'Stroke Play';
+  const allowLabel=r.hcpAllowance&&r.hcpAllowance!==100?` · ${r.hcpAllowance}% HCP`:'';
   document.getElementById('r-sub').textContent=
-    `${fmtLabel} · ${r.holes} holes · ${r.players.length} player${r.players.length!==1?'s':''}`;
+    `${fmtLabel} · ${r.holes} holes · ${r.players.length} player${r.players.length!==1?'s':''}${allowLabel}`;
   document.getElementById('r-code').textContent=r.id;
   document.getElementById('r-date').textContent=fmtDate(r.date);
   document.getElementById('r-badge').innerHTML=
@@ -1279,6 +1319,7 @@ function switchTab(t){
 function buildPlayerRow(r,p,isStab){
   const pi=r.players.indexOf(p);
   const hcp=r.handicaps?.[p]??0;
+  const allowance=r.hcpAllowance??100;
   const isMe=!S.isAdmin&&S.currentPlayer===p;
   // Find if currentPlayer is in the same group as this player
   const groups=r.groups||[];
@@ -1291,7 +1332,7 @@ function buildPlayerRow(r,p,isStab){
     const si=r.si[i];
     const cls=sc>0?scoreClass(sc,par):'empty-c';
     if(sc>0){gross+=sc;played++;vp+=sc-par;}
-    const pts=sc>0?stablefordPts(sc,par,hcp,si,r.holes):null;
+    const pts=sc>0?stablefordPts(sc,par,hcp,si,r.holes,allowance):null;
     if(pts!==null)totalPts+=pts;
     const editable=canEdit;
     const click=editable?`onclick="openModal('${r.id}',${pi},${i})"` :'';
@@ -1301,7 +1342,11 @@ function buildPlayerRow(r,p,isStab){
   }).join('');
   const meBadge=isMe?` <span style="font-size:10px;background:var(--amber);color:#fff;padding:1px 5px;font-weight:700">YOU</span>`:'';
   const courseHcp=toCourseHcp(hcp,r.holes);
-  const nameCell=`${p}${meBadge}<br><span style="font-size:10px;color:var(--muted)">Idx ${hcp} · CH ${courseHcp}</span>`;
+  const pHcp=playingHcp(hcp,r.holes,allowance);
+  const hcpLabel=allowance===100
+    ?`Idx ${hcp} · CH ${courseHcp}`
+    :`Idx ${hcp} · CH ${courseHcp} · Playing ${pHcp} (${allowance}%)`;
+  const nameCell=`${p}${meBadge}<br><span style="font-size:10px;color:var(--muted)">${hcpLabel}</span>`;
   const rowStyle=isMe?` style="background:#fffbeb;"`:'';
   if(isStab){
     return `<tr${rowStyle}><td>${nameCell}</td>${cells}<td><b>${gross||'—'}</b></td><td class="${played>0?'green':''}"><b>${played>0?totalPts:'—'} pts</b></td></tr>`;
@@ -1441,10 +1486,13 @@ function openModal(roundId,pIdx,hole){
   S.mCtx={roundId,pIdx,hole};
   const par=r.pars[hole],si=r.si[hole],player=r.players[pIdx];
   const hcp=r.handicaps?.[player]??0;
+  const allowance=r.hcpAllowance??100;
   const courseHcp=toCourseHcp(hcp,r.holes);
+  const pHcp=playingHcp(hcp,r.holes,allowance);
+  const hcpStr=allowance===100?`CH ${courseHcp}`:`CH ${courseHcp} → ${pHcp} (${allowance}%)`;
   S.mScore=(r.scores[player][hole]>0)?r.scores[player][hole]:par;
   document.getElementById('m-title').textContent=`Hole ${hole+1} — ${COURSE.names[hole]||''}`;
-  document.getElementById('m-meta').textContent=`Par ${par} · SI ${si} · ${player} (Idx ${hcp} / CH ${courseHcp})`;
+  document.getElementById('m-meta').textContent=`Par ${par} · SI ${si} · ${player} · ${hcpStr}`;
   const stabEl=document.getElementById('m-stab');
   stabEl.style.display=r.scoring==='stableford'?'block':'none';
 
@@ -1453,7 +1501,7 @@ function openModal(roundId,pIdx,hole){
   qEl.style.gridTemplateColumns=`repeat(${hi-lo+1},1fr)`;
   qEl.innerHTML=Array.from({length:hi-lo+1},(_,k)=>{
     const s=lo+k,d=s-par;
-    const pts=r.scoring==='stableford'?stablefordPts(s,par,hcp,si,r.holes):null;
+    const pts=r.scoring==='stableford'?stablefordPts(s,par,hcp,si,r.holes,allowance):null;
     const sub=pts!==null?`${pts}pt`:`${vpLabel(d)}`;
     return `<button class="hbtn ${scoreBtnClass(s,par)}" id="qb-${s}" onclick="quickSet(${s})">${s}<br><span style="font-size:9px">${sub}</span></button>`;
   }).join('');
@@ -1534,6 +1582,7 @@ function updateModal(){
   const r=getRound(S.mCtx.roundId),par=r.pars[S.mCtx.hole],si=r.si[S.mCtx.hole];
   const player=r.players[S.mCtx.pIdx];
   const hcp=r.handicaps?.[player]??0;
+  const allowance=r.hcpAllowance??100;
   document.getElementById('m-score').textContent=S.mScore;
   const d=S.mScore-par;
   const lEl=document.getElementById('m-label');
@@ -1541,7 +1590,7 @@ function updateModal(){
   lEl.style.color=d<0?'var(--green)':d>0?'var(--red)':'var(--muted)';
   const stabEl=document.getElementById('m-stab');
   if(r.scoring==='stableford'){
-    const pts=stablefordPts(S.mScore,par,hcp,si,r.holes);
+    const pts=stablefordPts(S.mScore,par,hcp,si,r.holes,allowance);
     stabEl.textContent=`Stableford: ${pts} point${pts!==1?'s':''}`;
   }
   document.querySelectorAll('#m-quick .hbtn').forEach(b=>{
@@ -1629,13 +1678,15 @@ function renderLeaderboard(){
     }
     const grpLabel=playerGroup(p.name);
     const ch=toCourseHcp(p.hcp,r.holes);
+    const pHcp=playingHcp(p.hcp,r.holes,r.hcpAllowance??100);
+    const hcpLabel=(r.hcpAllowance??100)===100?`CH ${ch}`:`CH ${ch} → ${pHcp} (${r.hcpAllowance}%)`;
     const rowCls=['gold','silver','bronze'][i]||'';
     const em=['🥇','🥈','🥉'][i]||'';
     return`<div class="lbrow ${rowCls}">
       <div class="lb-rank">${em||'#'+(i+1)}</div>
       <div>
         <div class="lb-name">${p.name}</div>
-        <div class="lb-sub">Idx ${p.hcp} · CH ${ch}${grpLabel?' · '+grpLabel:''} · ${subInfo} · ${p.played}/${r.holes} holes</div>
+        <div class="lb-sub">Idx ${p.hcp} · ${hcpLabel}${grpLabel?' · '+grpLabel:''} · ${subInfo} · ${p.played}/${r.holes} holes</div>
       </div>
       <div class="lb-score"><div class="vs-par ${mainCls}">${mainScore}</div></div>
     </div>`;
