@@ -1043,8 +1043,19 @@ function pinCancel(){if(S.pinAction==='finish')openRound(S.currentId);else goHom
 function adminLogout(){S.isAdmin=false;goHome();}
 
 // ── Admin ─────────────────────────────────────────────────
-function renderAdmin(){
+async function renderAdmin(){
   load();
+  // Show loading indicator while syncing
+  const syncBar=document.getElementById('admin-sync-bar');
+  if(syncBar) syncBar.innerHTML=`<div class="sync-bar syncing"><div class="sync-dot syncing"></div><div class="sync-info">Updating from cloud…<small>Please wait</small></div></div>`;
+  // Pull latest from cloud if configured
+  const cfg=getSyncCfg();
+  if(cfg.binId){
+    await pullFromCloud(false);
+    load(); // reload after pull
+  } else {
+    if(syncBar) syncBar.innerHTML=`<div class="sync-bar"><div class="sync-dot"></div><div class="sync-info">Cloud sync not set up<small>Admin → ☁️ Cloud Sync Settings to enable</small></div></div>`;
+  }
   const sched=S.rounds.filter(r=>r.status==='scheduled');
   const live=S.rounds.filter(r=>r.status==='live');
   const done=S.rounds.filter(r=>r.status==='complete').slice().reverse();
@@ -1325,7 +1336,10 @@ function startRound(id){
 }
 
 // ── Open Round ────────────────────────────────────────────
-function openRound(id){
+async function openRound(id){
+  // Pull latest from cloud silently before opening
+  const cfg=getSyncCfg();
+  if(cfg.binId) await pullFromCloud(false);
   load();S.currentId=id;
   const r=getRound(id);if(!r){goHome();return;}
   document.getElementById('r-title').textContent=r.course;
