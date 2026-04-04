@@ -385,7 +385,7 @@ thead tr:nth-child(3) td:first-child{background:#fffbeb}
           <li>This continues until the ball is holed</li>
           <li>Each team member must contribute a minimum number of drives</li>
           <li>Minimum drives = holes ÷ players (rounded down)</li>
-          <li>Team handicap = combined player handicaps minus 25%</li>
+          <li>Team handicap = 25% of lowest HCP + 20% of 2nd + 15% of 3rd + 10% of highest</li>
         </ul>
       </div>
       <div class="scramble-opts">
@@ -678,6 +678,15 @@ function stablefordPts(gross,par,handicap,si,totalHoles){
 function ptsClass(pts){
   if(pts===null)return'';
   return ['pts-0','pts-1','pts-2','pts-3','pts-4','pts-5'][Math.min(pts,5)]||'pts-5';
+}
+// Texas Scramble team handicap:
+// Players sorted lowest→highest HCP, then multiplied by 25%, 20%, 15%, 10%
+function scrambleTeamHcp(group, handicaps){
+  const pcts=[0.25,0.20,0.15,0.10];
+  const sorted=[...group.players]
+    .map(p=>handicaps?.[p]??0)
+    .sort((a,b)=>a-b);
+  return Math.round(sorted.reduce((sum,hcp,i)=>sum+hcp*(pcts[i]??0.10),0));
 }
 
 // ── Totals ────────────────────────────────────────────────
@@ -1443,8 +1452,8 @@ function renderLeaderboard(){
       const played=scores.filter(s=>s>0).length;
       const tot=scores.reduce((a,b)=>a+(b||0),0);
       let vp=0;scores.forEach((s,i)=>{if(s>0)vp+=s-r.pars[i];});
-      // Team handicap = combined player handicaps minus 25%
-      const teamHcp=Math.round(g.players.reduce((a,p)=>a+(r.handicaps?.[p]??0),0)*0.75);
+      // Team handicap: lowest HCP×25% + 2nd×20% + 3rd×15% + 4th×10%
+      const teamHcp=scrambleTeamHcp(g,r.handicaps);
       const net=tot>0?tot-teamHcp:0;
       return{gi,g,played,tot,vp,net,teamHcp,sk:played>0?vp:9999};
     }).sort((a,b)=>a.sk-b.sk);
@@ -1539,7 +1548,7 @@ function renderStats(){
           <div style="font-size:10px;color:${ok?'var(--green)':'var(--red)'}">${ok?'✓ OK':'Min '+minD}</div>
         </div>`;
       }).join('');
-      const teamHcp=Math.round(g.players.reduce((a,p)=>a+(r.handicaps?.[p]??0),0)*0.75);
+      const teamHcp=scrambleTeamHcp(g,r.handicaps);
       return`<div style="margin-bottom:20px">
         <div class="sec-head">🤝 Group ${gi+1}${g.teeTime?' · '+g.teeTime:''}</div>
         <div class="g4">
